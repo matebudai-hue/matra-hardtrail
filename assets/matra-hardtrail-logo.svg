@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="360" viewBox="0 0 1200 360" role="img" aria-labelledby="title desc">
+<title id="title">Mátra Hard Trail</title>
+<desc id="desc">Minimal mountain logo for the Mátra Hard Trail decision lab.</desc>
+<rect width="1200" height="360" rx="48" fill="#0b223d"/>
+<path d="M80 250 L220 120 L330 230 L465 80 L640 250 Z" fill="#e8f6f7" opacity="0.95"/>
+<path d="M430 250 L560 135 L660 220 L805 70 L990 250 Z" fill="#0f8a91" opacity="0.9"/>
+<path d="M75 252 H1010" stroke="#ffffff" stroke-width="8" opacity="0.55" stroke-linecap="round"/>
+<text x="80" y="315" font-family="Arial, Helvetica, sans-serif" font-size="48" font-weight="800" fill="#ffffff">#HARDTRAIL: MÁTRA</text>
+<text x="690" y="315" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="700" fill="#e8f6f7">DÖNTÉSI BIZTONSÁGI INDEX</text>
+</svg>
