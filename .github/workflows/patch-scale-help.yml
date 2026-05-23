@@ -46,3 +46,5 @@ jobs:
           git add matra-v2.html
           git commit -m "Add scale explanation to Matra v2"
           git push
+
+# trigger: scale-help-v2
