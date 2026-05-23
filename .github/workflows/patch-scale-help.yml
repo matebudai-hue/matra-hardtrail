@@ -1,0 +1,48 @@
+name: Patch Matra scale help
+
+on:
+  push:
+    paths:
+      - '.github/workflows/patch-scale-help.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add scale explanation
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('matra-v2.html')
+          html = p.read_text(encoding='utf-8')
+          changed = False
+          css = '.scale-help{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0 6px}.scale-help span{border:1px solid var(--l);background:#f7fbfd;border-radius:14px;padding:9px 11px;font-size:12px;color:#3b526b}.scale-help b{color:#0b223d}'
+          if '.scale-help{' not in html:
+              html = html.replace('textarea{min-height:86px}.scale{', 'textarea{min-height:86px}' + css + '.scale{')
+              changed = True
+          if '.scale-help{grid-template-columns:1fr}' not in html:
+              html = html.replace('@media(max-width:900px){.layout,.layout.no-result,.phasebar,.row{grid-template-columns:1fr}', '@media(max-width:900px){.layout,.layout.no-result,.phasebar,.row,.scale-help{grid-template-columns:1fr}')
+              changed = True
+          block = '<div class="scale-help"><span><b>1:</b> egyáltalán nem jellemző / nem történt meg</span><span><b>6:</b> teljesen jellemző / egyértelműen megtörtént</span></div>'
+          if '<div class="scale-help"' not in html:
+              html = html.replace('<section class="card meeting-section"><h2>Kockázatmérlegelés és közös döntés</h2><p class="muted">1–6 között pontozz. Nincs középérték.</p><div id="questions"></div></section>', '<section class="card meeting-section"><h2>Kockázatmérlegelés és közös döntés</h2><p class="muted">1–6 között pontozz. Nincs középérték.</p>' + block + '<div id="questions"></div></section>')
+              changed = True
+          if changed:
+              p.write_text(html, encoding='utf-8')
+          PY
+      - name: Commit patch
+        run: |
+          if git diff --quiet -- matra-v2.html; then
+            echo "No changes needed"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add matra-v2.html
+          git commit -m "Add scale explanation to Matra v2"
+          git push
