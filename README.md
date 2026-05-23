@@ -2,41 +2,65 @@
 
 Online résztvevői és tréneri felület a Mátra Hard Trail döntési szimulációhoz.
 
-A gyakorlat lényege: egy téli, bizonytalan, nyomás alatti helyzetben a csoportnak döntést kell hoznia. Maradnak az autónál, elindulnak, kettéválnak vagy más megoldást választanak. A felület nem túlélési esélyt számol, hanem döntési biztonsági indexet ad.
+## Aktuális stabil verzió
 
-## Élő oldal
+**Mostantól ez az egyetlen éles, használandó verzió:**
 
-GitHub Pages bekapcsolása után:
+```text
+matra-v2.html
+```
+
+Élő oldal:
 
 ```text
 https://matebudai-hue.github.io/matra-hardtrail/
 ```
 
-## Jelenlegi állapot
-
-Béta, de tréningben már használható verzió.
-
-A felület rögzíti:
-
-- csoport neve,
-- első stratégiai döntés,
-- első 6 kiválasztott tárgy,
-- csoportos megbeszélés minősége,
-- két önreflexiós kérdés,
-- rövid indoklás,
-- döntési biztonsági index.
-
-## Döntési biztonsági index
-
-A mutató 100 pontos.
+Közvetlen link:
 
 ```text
-Stratégiai döntés: 20 pont
-Tárgyválasztás: 20 pont
-Megbeszélés és önreflexió: 60 pont
+https://matebudai-hue.github.io/matra-hardtrail/matra-v2.html
 ```
 
-A gyakorlat fókusza nem az, hogy ki választotta ki a „jó” tárgyakat. A lényeg az, hogyan jutott el a csoport a döntésig.
+Az `index.html` már erre a stabil v2 felületre irányít át.
+
+## Rövid működés
+
+A felület háromlépcsős:
+
+1. **Meeting előtt**
+   - sztori
+   - saját döntés
+   - saját top 6 tárgy
+
+2. **Meeting után**
+   - közös stratégia
+   - közös top 6 tárgy
+   - 12 kérdéses kockázatmérlegelés
+   - rövid indoklás
+
+3. **Mutató**
+   - kockázatmérlegelési index
+   - pontbontás
+   - saját–közös egyezés
+   - erősségek
+   - kockázati jelek
+   - összegzés másolása
+   - PDF / nyomtatás
+   - PDF küldése magamnak
+
+## A gyakorlat lényege
+
+A Mátra Hard Trail egy döntési labor. A csoport egy téli, bizonytalan, nyomás alatti helyzetben dönt arról, hogy marad az autónál, elindul, kettéválik vagy más megoldást választ.
+
+A felület nem túlélési esélyt számol, hanem azt teszi láthatóvá, hogyan mérlegelt a csoport:
+
+- felmérték-e a kockázatokat,
+- különbséget tettek-e biztos és feltételezett információ között,
+- meghallották-e a csendesebb véleményeket,
+- érvek vagy hangerő alapján született-e döntés,
+- az információk vezették-e a stratégiát,
+- a résztvevő tud-e azonosulni a közös döntéssel.
 
 ## Fő tanulási üzenet
 
@@ -44,18 +68,12 @@ A gyakorlat fókusza nem az, hogy ki választotta ki a „jó” tárgyakat. A l
 Nem a hó volt az igazi veszély.
 ```
 
-A hó, a hideg, a sötétedés és a felszerelés csak díszlet. A gyakorlat azt teszi láthatóvá, hogyan működik a csoport bizonytalanságban, időnyomás alatt, korlátozott információval.
-
-## Dokumentáció
-
-- `docs/trainer-guide.md` — tréneri útmutató
-- `docs/decision-index-spec.md` — indexlogika és pontozás
-- `docs/design-log.md` — fejlesztési napló
-- `docs/changelog.md` — változások
-- `docs/roadmap.md` — későbbi fejlesztési irányok
+A hó, a hideg, a sötétedés és a felszerelés csak díszlet. A gyakorlat azt mutatja meg, hogyan működik a csoport bizonytalanságban, időnyomás alatt, korlátozott információval.
 
 ## Technikai állapot
 
-A jelenlegi verzió egyetlen statikus `index.html` fájl. Nincs Firebase, nincs adatbázis, nincs szerveroldali adattárolás. A kitöltés böngészőben fut, az aktuális állapot localStorage-ba mentődik.
+Statikus GitHub Pages oldal. Nincs Firebase, nincs adatbázis, nincs szerveroldali adattárolás. A kitöltés böngészőben fut, az aktuális állapot localStorage-ba mentődik.
 
-Későbbi irány lehet Firebase-alapú központi dashboard, egyéni és csoportos beküldéssel.
+## Stabilitási megjegyzés
+
+Ez a tiszta, működő v2 verzió. Későbbi fejlesztésnél ehhez kell visszatérni kiindulópontként.
