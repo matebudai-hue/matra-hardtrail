@@ -176,3 +176,10 @@ Az automatikus háttérből küldött e-mailhez szerveroldali szolgáltatás kel
 A Mátra maradjon gyors, tiszta, tréningtermi eszköz. Ne nőjön Halastó-méretű rendszerré külön döntés nélkül.
 
 Új ötletet először külön fájlban vagy külön branchben kell kipróbálni. A stabil `matra-v3.html` csak tudatos döntéssel változzon.
+
+## Véglegesítési audit
+
+- A két fő játékoldal teljes HTML-forrásból fut, nem wrapperből.
+- A szerzői credit minden HTML felületen visszafogottan, oldalba építve jelenik meg.
+- A nyilvános felületeken az alapjáték elnevezés szerepel; a `matra-v3.html` fájlnév technikai visszatérési pont.
+
