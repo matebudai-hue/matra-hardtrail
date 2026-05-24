@@ -17,7 +17,7 @@ jobs:
         with:
           persist-credentials: true
 
-      - name: Add small fixed credit to every HTML surface
+      - name: Add small credit to every HTML surface
         run: |
           python3 <<'PY'
           from pathlib import Path
@@ -25,7 +25,7 @@ jobs:
 
           credit = "Készítette: Budai Máté, 2026. Hajrá, Fradi!"
           css = """
-.global-credit{position:fixed;left:50%;bottom:6px;transform:translateX(-50%);z-index:9999;pointer-events:none;font-size:11px;line-height:1.2;font-weight:800;color:rgba(16,42,73,.72);background:rgba(255,255,255,.78);border:1px solid rgba(16,42,73,.12);border-radius:999px;padding:4px 10px;box-shadow:0 8px 24px rgba(0,0,0,.10);backdrop-filter:blur(6px);max-width:calc(100% - 20px);white-space:nowrap}
+.global-credit{position:fixed;left:50%;bottom:6px;transform:translateX(-50%);z-index:9999;pointer-events:none;font-size:11px;line-height:1.2;font-weight:700;color:rgba(16,42,73,.62);background:rgba(255,255,255,.72);border:1px solid rgba(16,42,73,.10);border-radius:999px;padding:4px 10px;box-shadow:0 8px 24px rgba(0,0,0,.08);backdrop-filter:blur(6px);max-width:calc(100% - 20px);white-space:nowrap}
 body{padding-bottom:34px}
 @media print{.global-credit{display:none!important}body{padding-bottom:0}}
 """.strip()
@@ -36,10 +36,16 @@ body{padding-bottom:34px}
               text = path.read_text(encoding='utf-8')
               original = text
 
+              text = text.replace('Mátra Hard Trail · statikus GitHub Pages felület', 'Mátra Hard Trail')
+              text = text.replace('Mátra Hard Trail · statikus GitHub Pages oldal', 'Mátra Hard Trail')
+              text = text.replace('Mátra Hard Trail · GitHub Pages', 'Mátra Hard Trail')
+
               # Remove older credit attempts and duplicate injected blocks.
               text = re.sub(r'\n?<p class="credit">Készítette: Budai Máté, 2026\. Hajrá, Fradi!</p>', '', text)
+              text = re.sub(r'\n?<p class="credit-line">Készítette: Budai Máté, 2026\. Hajrá, Fradi!</p>', '', text)
+              text = re.sub(r'\n?<footer class="credit-line">Készítette: Budai Máté, 2026\. Hajrá, Fradi!</footer>', '', text)
               text = re.sub(r'\n?<div class="global-credit">Készítette: Budai Máté, 2026\. Hajrá, Fradi!</div>', '', text)
-              text = re.sub(r'\n?\.global-credit\{[^}]*\}\n?body\{padding-bottom:34px\}\n?@media print\{\.global-credit\{display:none!important\}body\{padding-bottom:0\}\}', '', text)
+              text = re.sub(r'\n?\.global-credit\{.*?\}\n?body\{padding-bottom:34px\}\n?@media print\{\.global-credit\{display:none!important\}body\{padding-bottom:0\}\}', '', text, flags=re.S)
 
               if '</style>' in text and '.global-credit' not in text:
                   text = text.replace('</style>', css + '\n</style>', 1)
@@ -69,5 +75,5 @@ body{padding-bottom:34px}
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add *.html
-          git commit -m "Add creator credit to HTML pages"
+          git commit -m "Add creator credit to all HTML pages"
           git push
