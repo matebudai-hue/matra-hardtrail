@@ -1,0 +1,73 @@
+name: Apply credit footer
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply-credit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Add small fixed credit to every HTML surface
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          import re
+
+          credit = "Készítette: Budai Máté, 2026. Hajrá, Fradi!"
+          css = """
+.global-credit{position:fixed;left:50%;bottom:6px;transform:translateX(-50%);z-index:9999;pointer-events:none;font-size:11px;line-height:1.2;font-weight:800;color:rgba(16,42,73,.72);background:rgba(255,255,255,.78);border:1px solid rgba(16,42,73,.12);border-radius:999px;padding:4px 10px;box-shadow:0 8px 24px rgba(0,0,0,.10);backdrop-filter:blur(6px);max-width:calc(100% - 20px);white-space:nowrap}
+body{padding-bottom:34px}
+@media print{.global-credit{display:none!important}body{padding-bottom:0}}
+""".strip()
+          html = f'<div class="global-credit">{credit}</div>'
+
+          changed = []
+          for path in sorted(Path('.').glob('*.html')):
+              text = path.read_text(encoding='utf-8')
+              original = text
+
+              # Remove older credit attempts and duplicate injected blocks.
+              text = re.sub(r'\n?<p class="credit">Készítette: Budai Máté, 2026\. Hajrá, Fradi!</p>', '', text)
+              text = re.sub(r'\n?<div class="global-credit">Készítette: Budai Máté, 2026\. Hajrá, Fradi!</div>', '', text)
+              text = re.sub(r'\n?\.global-credit\{[^}]*\}\n?body\{padding-bottom:34px\}\n?@media print\{\.global-credit\{display:none!important\}body\{padding-bottom:0\}\}', '', text)
+
+              if '</style>' in text and '.global-credit' not in text:
+                  text = text.replace('</style>', css + '\n</style>', 1)
+              elif '</head>' in text and '.global-credit' not in text:
+                  text = text.replace('</head>', '<style>' + css + '</style>\n</head>', 1)
+
+              if '</body>' in text:
+                  text = text.replace('</body>', html + '\n</body>', 1)
+              else:
+                  text += '\n' + html + '\n'
+
+              if text != original:
+                  path.write_text(text, encoding='utf-8')
+                  changed.append(str(path))
+
+          print('Changed files:')
+          for p in changed:
+              print('-', p)
+          PY
+
+      - name: Commit changes
+        run: |
+          if git diff --quiet; then
+            echo "No HTML credit changes needed."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add *.html
+          git commit -m "Add creator credit to HTML pages"
+          git push
