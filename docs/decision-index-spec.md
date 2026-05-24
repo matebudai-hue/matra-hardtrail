@@ -14,9 +14,15 @@ A mutató nem túlélési esélyt számol. Azt teszi láthatóvá, hogy a részt
 
 A v3 három fázisra bontja a folyamatot:
 
-1. **Meeting előtt**: saját stratégia és saját top 6 tárgy.
-2. **Meeting után**: közös stratégia, közös top 6, 12 skálakérdés és rövid indoklás.
+1. **Meeting előtt**: saját stratégia és saját top 6 tárgy. A saját stratégiai opciók rövid magyarázatot kapnak, hogy a résztvevő pontosabban tudjon választani.
+2. **Meeting után**: közös stratégia, közös top 6, 12 skálakérdés és rövid indoklás. A közös stratégiai opcióknál már nincs magyarázat, mert addigra a csoport már döntött.
 3. **Mutató**: index, bontás, személyes visszajelzés, páros beszélgetéshez két kérdés.
+
+A közös szakasz csak akkor nyitható meg, ha megvan:
+
+- saját első döntés,
+- saját top 6 tárgy,
+- más megoldás választása esetén annak rövid leírása.
 
 A mutató csak teljes kitöltés után nyitható meg. Szükséges hozzá:
 
@@ -24,6 +30,7 @@ A mutató csak teljes kitöltés után nyitható meg. Szükséges hozzá:
 - saját top 6 tárgy,
 - közös stratégia,
 - közös top 6 tárgy,
+- más közös megoldás választása esetén annak rövid leírása,
 - mind a 12 skálakérdés.
 
 ## Pontozási szerkezet
