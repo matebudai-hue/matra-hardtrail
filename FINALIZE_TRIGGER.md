@@ -6,3 +6,4 @@ Javítási csomag indítása: wrapper megszüntetés, credit egységesítés, ny
 
 Run: 2026-05-25 final audit package.
 Run: 2026-05-25 after workflow update.
+Run: 2026-05-25 after floating-credit detector fix.
