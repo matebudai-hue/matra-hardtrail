@@ -36,7 +36,7 @@ Ha a v3 visszajelzési logikáját később túlhúznánk, ehhez a v2-höz lehet
 
 ## Mi új a v3-ban?
 
-A v3 fő fejlesztése a kitöltés utáni, személyre szabottabb visszajelzés.
+A v3 fő fejlesztése a kitöltés utáni, személyre szabottabb visszajelzés és a hibabiztosabb kitöltési folyamat.
 
 Az index mellett megjelenik a blokk:
 
@@ -47,28 +47,26 @@ Mit mutat a kitöltésed?
 Három részből áll:
 
 1. **A csoport működéséből ez látszik**
-2. **Te ebben így voltál benne**
+2. **Te így működtél a csoportban**
 3. **Ebből most ez vihető tovább**
 
 A visszajelzés nem diagnózis és nem ítélet. A kapott adatokból dolgozik, és a feldolgozást segíti.
 
-A blokk végén két páros beszélgetéshez használható kérdés van:
-
-```text
-1. Melyik saját szempontod jelent meg ténylegesen a közös döntésben?
-2. Volt olyan érv, amit hallottál, de a csoport végül nem használt?
-```
+A blokk végén két páros beszélgetéshez használható kérdés van. Ezek nem fix kérdések, hanem a válaszok alapján személyre szabottan jelennek meg.
 
 ## Rövid működés
 
 1. **Meeting előtt**
    - helyzetleírás
    - saját első döntés
+   - a saját stratégiai opcióknál rövid magyarázat
    - saját tárgysorrend
+   - más megoldás választásánál rövid szöveges leírás
 
 2. **Meeting után**
    - közös stratégia
    - közös top 6 tárgy
+   - más közös megoldás választásánál rövid szöveges leírás
    - 12 kérdéses kockázatmérlegelés
    - rövid indoklás
 
@@ -81,7 +79,24 @@ A blokk végén két páros beszélgetéshez használható kérdés van:
    - kockázati jelek
    - összegzés másolása
    - 1 oldalas PDF / nyomtatás
-   - riport küldése mailben a böngésző levelezőfunkcióján keresztül
+   - riport előkészítése e-mailben a böngésző levelezőfunkcióján keresztül
+
+## Kitöltési védelem
+
+A közös szakasz csak akkor nyílik meg, ha megvan:
+
+- a saját első döntés,
+- a saját top 6 tárgy,
+- más megoldás választása esetén annak rövid leírása.
+
+A mutató csak teljes kitöltés után nyílik meg. Ehhez szükséges:
+
+- saját első döntés,
+- saját top 6 tárgy,
+- közös stratégia,
+- közös top 6 tárgy,
+- más közös megoldás választása esetén annak rövid leírása,
+- mind a 12 skálakérdés.
 
 ## A gyakorlat lényege
 
