@@ -40,11 +40,34 @@
 - Frissült a `docs/decision-index-spec.md`, hogy a valós v2 logikát írja le.
 - Frissült ez a changelog.
 
+## 2026-05-24 – v3 személyre szabott visszajelzés
+
+- Létrejött a `matra-v3.html`.
+- Az `index.html` most már a v3 felületre irányít.
+- A v2 megmaradt stabil visszatérési pontként.
+- Bekerült az új visszajelző blokk: **Mit mutat a kitöltésed?**
+- A visszajelzés három részből áll:
+  - A csoport működéséből ez látszik.
+  - Te ebben így voltál benne.
+  - Ebből most ez vihető tovább.
+- A visszajelzés szabályalapú, nem AI-generált.
+- Bekerült a két páros beszélgetéshez használható kérdés:
+  - Melyik saját szempontod jelent meg ténylegesen a közös döntésben?
+  - Volt olyan érv, amit hallottál, de a csoport végül nem használt?
+- A másolható összegzés és a nyomtatható riport is tartalmazza az új visszajelzést.
+- A README frissült, és v3-at jelöli aktuális verzióként.
+
 ## Fő szakmai változás
 
 A felület nem túlélési játékot támogat, hanem döntési laborlogikát.
 
 A kérdés nem az, hogy ki választotta ki a legtöbb szakértői tárgyat, hanem az, hogy milyen döntési folyamaton ment át a résztvevő és a csoport.
+
+A v3-ban az index már nem csak számot ad, hanem feldolgozási hidat is:
+
+```text
+A kapott adatok alapján így látszik a csoport döntési folyamata, és így látszik a te szereped benne.
+```
 
 A legerősebb tanulási fókusz:
 
