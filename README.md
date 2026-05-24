@@ -2,18 +2,20 @@
 
 Online résztvevői és tréneri felület a Mátra Hard Trail döntési szimulációhoz.
 
-## Aktuális verzió
-
-**Ez az éles, használandó verzió:**
-
-```text
-matra-v3.html
-```
-
-Élő oldal:
+## Főoldal
 
 ```text
 https://matebudai-hue.github.io/matra-hardtrail/
+```
+
+A főoldal most navigációs központ. Innen elérhető az alapjáték, a vezetői verzió, a tréneri leírások és a vezetői kártyák.
+
+## Aktuális stabil alapverzió
+
+**Ez az éles, használandó alapverzió:**
+
+```text
+matra-v3.html
 ```
 
 Közvetlen link:
@@ -22,9 +24,36 @@ Közvetlen link:
 https://matebudai-hue.github.io/matra-hardtrail/matra-v3.html
 ```
 
-Az `index.html` erre a v3 felületre irányít át.
+## Vezetői alternatíva
+
+A vezetői verzió külön fájlban fut, hogy az alapjáték stabil v3 verzióját ne érintse.
+
+```text
+matra-leader.html
+```
+
+Közvetlen link:
+
+```text
+https://matebudai-hue.github.io/matra-hardtrail/matra-leader.html
+```
+
+Ebben a változatban a csoportnak van vezetője. Az útvonalat a vezető javasolta, majd a helyzet elején elmegy térerőt keresni. A csoport nélküle kezdi a beszélgetést, a vezető később visszatér az alakuló döntési helyzetbe.
+
+Kapcsolódó anyagok:
+
+```text
+treneri-leiras-leader.html
+vezeto-kartyak.html
+```
 
 ## Stabil visszatérési pont
+
+A stabil v3 külön jegyzetben is rögzítve van:
+
+```text
+STABIL-V3.md
+```
 
 A korábbi tiszta, élesben kipróbált verzió megmaradt:
 
@@ -32,7 +61,7 @@ A korábbi tiszta, élesben kipróbált verzió megmaradt:
 matra-v2.html
 ```
 
-Ha a v3 visszajelzési logikáját később túlhúznánk, ehhez a v2-höz lehet visszatérni.
+Ha a v3 visszajelzési logikáját később túlhúznánk, ehhez a v2-höz is lehet visszatérni.
 
 ## Mi új a v3-ban?
 
@@ -74,6 +103,7 @@ A blokk végén két páros beszélgetéshez használható kérdés van. Ezek ne
    - kockázatmérlegelési index
    - pontbontás
    - saját–közös egyezés
+   - szakértői tárgyértékelés
    - személyre szabott visszajelzés
    - erősségek
    - kockázati jelek
@@ -144,3 +174,5 @@ Az automatikus háttérből küldött e-mailhez szerveroldali szolgáltatás kel
 ## Fejlesztési elv
 
 A Mátra maradjon gyors, tiszta, tréningtermi eszköz. Ne nőjön Halastó-méretű rendszerré külön döntés nélkül.
+
+Új ötletet először külön fájlban vagy külön branchben kell kipróbálni. A stabil `matra-v3.html` csak tudatos döntéssel változzon.
