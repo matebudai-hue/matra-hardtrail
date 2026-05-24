@@ -1,0 +1,108 @@
+name: Update Matra PDF reports
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'PDF_REPORT_TRIGGER.md'
+
+permissions:
+  contents: write
+
+jobs:
+  update-pdf-reports:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update print report templates
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          import re
+
+          credit = 'Készítette: Budai Máté, 2026. Hajrá, Fradi!'
+
+          print_css = '''@media print{@page{size:A4 portrait;margin:8mm}body{background:#fff}.wrap{display:none}#print{display:block!important;font-family:Inter,Arial,sans-serif;color:#102033}.page{height:281mm;overflow:hidden;padding:0;font-size:9px;line-height:1.18}.print-head{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:start;border-bottom:2px solid #0b223d;padding-bottom:5px;margin-bottom:5px}.page h1{font-size:18px;letter-spacing:-.03em;margin:0 0 2px;line-height:1.05}.page h2{font-size:10px;margin:0 0 3px;color:#0b223d}.page h3{font-size:9px;margin:0 0 2px;color:#0b223d}.print-sub{font-size:8px;color:#63748a;margin:0}.scorep{font-size:28px;font-weight:950;text-align:right;line-height:.9}.printgrid{display:grid;grid-template-columns:1fr 1fr;gap:4px}.box{border:1px solid #d8e1ea;border-radius:8px;padding:4px;margin:0;background:#fff}.box.wide{grid-column:1/-1}.compare{display:grid;grid-template-columns:1fr 1fr;gap:4px}.compact-list{margin:0;padding-left:15px}.compact-list li{margin:0 0 1px}.qtable{width:100%;border-collapse:collapse;font-size:7.4px;line-height:1.1}.qtable td{border-bottom:1px solid #edf1f5;padding:1px 3px;vertical-align:top}.qtable td:last-child{text-align:right;font-weight:900;width:18px}.print-feedback{font-size:8.2px}.print-feedback p{margin:0 0 3px}.print-reflect{margin:0;padding-left:15px}.print-reflect li{margin:0 0 2px}.tagline{margin:3px 0 0;font-weight:950;color:#0b223d}}'''
+
+          base_print = f'''<section id="print" class="hide"><div class="page"><div class="print-head"><div><h1>Mátra Hard Trail – Alapjáték</h1><p class="print-sub" id="pMeta">Csoport: -</p></div><div class="scorep" id="pscore">0 / 100</div></div><div class="printgrid"><div class="box wide"><h2>Döntés: én vs. csoport</h2><div class="compare"><div><h3>Én így döntöttem</h3><p id="pOwnStrategy"></p></div><div><h3>A csoport így döntött</h3><p id="pTeamStrategy"></p></div></div></div><div class="box wide"><h2>Top 6 tárgyak: én vs. csoport</h2><div class="compare"><div><h3>Saját top 6</h3><ol id="pOwnTop" class="compact-list"></ol></div><div><h3>Közös top 6</h3><ol id="pTeamTop" class="compact-list"></ol></div></div><p class="print-sub" id="pexpert"></p></div><div class="box wide"><h2>12 kérdés válaszai</h2><p class="print-sub">Skála: 1 = egyáltalán nem, 6 = teljesen</p><table class="qtable"><tbody id="pQRows"></tbody></table></div><div class="box wide print-feedback"><h2>Személyes visszajelzés</h2><p><b>A csoport működéséből ez látszik:</b> <span id="pg"></span></p><p><b>Te így működtél a csoportban:</b> <span id="pp"></span></p><p><b>Ebből most ez vihető tovább:</b> <span id="pf"></span></p></div><div class="box wide"><h2>Gondold végig páros beszélgetésben</h2><ol id="prq" class="print-reflect"></ol><p class="tagline">Nem a hó volt az igazi veszély.</p></div></div><p class="print-credit">{credit}</p></div></section>'''
+
+          leader_print = f'''<section id="print" class="hide"><div class="page"><div class="print-head"><div><h1>Mátra Hardtrail – A vezető visszatér</h1><p class="print-sub" id="pMeta">Csoport: -</p></div><div class="scorep" id="pscore">0 / 100</div></div><div class="printgrid"><div class="box wide"><h2>Döntés: én vs. csoport</h2><div class="compare"><div><h3>Én így döntöttem</h3><p id="pOwnStrategy"></p></div><div><h3>A csoport így döntött</h3><p id="pTeamStrategy"></p></div></div></div><div class="box wide"><h2>Top 6 tárgyak: én vs. csoport</h2><div class="compare"><div><h3>Saját top 6</h3><ol id="pOwnTop" class="compact-list"></ol></div><div><h3>Közös top 6</h3><ol id="pTeamTop" class="compact-list"></ol></div></div><p class="print-sub" id="pexpert"></p></div><div class="box wide"><h2>12 kérdés válaszai</h2><p class="print-sub">Skála: 1 = egyáltalán nem, 6 = teljesen</p><table class="qtable"><tbody id="pQRows"></tbody></table></div><div class="box wide print-feedback"><h2>Személyes visszajelzés</h2><p><b>Döntési folyamat:</b> <span id="pd"></span></p><p><b>Vezető visszatérése:</b> <span id="pl"></span></p><p><b>Saját szerep:</b> <span id="pp"></span></p></div><div class="box wide"><h2>Gondold végig páros beszélgetésben</h2><ol id="prq" class="print-reflect"></ol><p class="tagline">Nem a hó volt az igazi veszély.</p></div></div><p class="print-credit">{credit}</p></div></section>'''
+
+          base_helper = r'''function printListHtml(list){return list.length?list.map(id=>`<li>${esc(itemName(id))}</li>`).join(''):'<li>nincs adat</li>'}
+          function renderPrintReport(c,x,rq){if(!$('pOwnStrategy'))return;$('pMeta').textContent=(S.teamName?'Csoport: '+S.teamName+' · ':'')+'Azonos tárgyak: '+c.same+' / 6 · Szakértői fedés: '+c.expert+' / 6';$('pOwnStrategy').textContent=strategyLine('ps','psOther');$('pTeamStrategy').textContent=strategyLine('ts','tsOther');$('pOwnTop').innerHTML=printListHtml(S.my);$('pTeamTop').innerHTML=printListHtml(S.team);$('pQRows').innerHTML=q.map((qq,i)=>`<tr><td>${i+1}. ${esc(qq[0])}</td><td>${S.q[i]||'-'}</td></tr>`).join('')}'''
+
+          leader_helper = r'''function strategyLine(key,other){return strategyName(S[key])+(S[key]==='mas'&&S[other]?' – '+S[other]:'')}
+          function printListHtml(list){return list.length?list.map(id=>`<li>${esc(itemName(id))}</li>`).join(''):'<li>nincs adat</li>'}
+          function renderPrintReport(r,f){if(!$('pOwnStrategy'))return;$('pMeta').textContent=(S.teamName?'Csoport: '+S.teamName+' · ':'')+'Saját-közös egyezés: '+r.overlap+' / 6 · Szakértői tárgyfedés: '+r.expert+' / 10';$('pOwnStrategy').textContent=strategyLine('ps','psOther');$('pTeamStrategy').textContent=strategyLine('ts','tsOther');$('pOwnTop').innerHTML=printListHtml(S.my);$('pTeamTop').innerHTML=printListHtml(S.team);$('pQRows').innerHTML=questions.map((qq,i)=>`<tr><td>${i+1}. ${esc(qq.t)}</td><td>${S.q[i]||'-'}</td></tr>`).join('')}'''
+
+          def replace_print_css(text):
+              pattern = r'@media print\{@page\{size:A4 portrait;margin:10mm\}body\{background:#fff\}.*?\.scorep\{font-size:36px;font-weight:950\}\}'
+              text2, n = re.subn(pattern, print_css, text, count=1, flags=re.S)
+              if n != 1:
+                  raise SystemExit('print CSS block not replaced')
+              return text2
+
+          def replace_print_section(text, html):
+              text2, n = re.subn(r'<section id="print" class="hide">.*?</section>\n<div class="toast"', html+'\n<div class="toast"', text, count=1, flags=re.S)
+              if n != 1:
+                  raise SystemExit('print section not replaced')
+              return text2
+
+          def update_base(path):
+              text = Path(path).read_text(encoding='utf-8')
+              text = replace_print_css(text)
+              text = replace_print_section(text, base_print)
+              if 'function renderPrintReport(c,x,rq)' not in text:
+                  text = text.replace('function render(){save();', base_helper+'\nfunction render(){save();', 1)
+              old = "$('prq').innerHTML=rq.map(v=>'<li>'+esc(v)+'</li>').join('');applyPhase()}"
+              new = "$('prq').innerHTML=rq.map(v=>'<li>'+esc(v)+'</li>').join('');renderPrintReport(c,x,rq);applyPhase()}"
+              if old in text and 'renderPrintReport(c,x,rq);applyPhase()' not in text:
+                  text = text.replace(old, new, 1)
+              elif 'renderPrintReport(c,x,rq);applyPhase()' not in text:
+                  raise SystemExit('base render hook not inserted')
+              Path(path).write_text(text, encoding='utf-8')
+
+          def update_leader(path):
+              text = Path(path).read_text(encoding='utf-8')
+              text = replace_print_css(text)
+              text = replace_print_section(text, leader_print)
+              if 'function renderPrintReport(r,f)' not in text:
+                  text = text.replace('function render(){save();', leader_helper+'\nfunction render(){save();', 1)
+              old = "$('prq').innerHTML=f.qs.map(x=>`<li>${esc(x)}</li>`).join('')}"
+              new = "$('prq').innerHTML=f.qs.map(x=>`<li>${esc(x)}</li>`).join('');renderPrintReport(r,f)}"
+              if old in text and 'renderPrintReport(r,f)}' not in text:
+                  text = text.replace(old, new, 1)
+              elif 'renderPrintReport(r,f)}' not in text:
+                  raise SystemExit('leader render hook not inserted')
+              Path(path).write_text(text, encoding='utf-8')
+
+          update_base('matra-v3.html')
+          update_leader('matra-leader.html')
+
+          for path, title in [('matra-v3.html','Alapjáték'),('matra-leader.html','A vezető visszatér')]:
+              text = Path(path).read_text(encoding='utf-8')
+              checks = [
+                  'pOwnStrategy','pTeamStrategy','pOwnTop','pTeamTop','pQRows',
+                  'Skála: 1 = egyáltalán nem, 6 = teljesen',
+                  'renderPrintReport', credit
+              ]
+              missing = [c for c in checks if c not in text]
+              if missing:
+                  raise SystemExit(f'{path} missing: {missing}')
+              if text.count('<section id="print" class="hide">') != 1:
+                  raise SystemExit(f'{path} has wrong print section count')
+              if 'raw.githubusercontent.com' in text:
+                  raise SystemExit(f'{path} still contains raw.githubusercontent.com')
+
+          PY
+      - name: Commit changes
+        run: |
+          if git diff --quiet; then
+            echo "No changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add matra-v3.html matra-leader.html
+          git commit -m "Update one-page PDF report layout"
+          git push
