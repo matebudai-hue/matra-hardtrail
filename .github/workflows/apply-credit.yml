@@ -73,35 +73,28 @@ jobs:
               text = inject_style(text, light=False)
               footer = f'<footer class="creator-credit">{CREDIT}</footer>'
               if '<footer class="footer"' in text:
-                  # Put the credit near the existing page footer, not as a floating layer.
                   text = re.sub(r'(</footer>)(</div>\s*<section id="print")', r'\1' + footer + r'\2', text, count=1)
                   text = re.sub(r'(</footer>)(</div>\s*</body>)', r'\1' + footer + r'\2', text, count=1)
               if footer not in text:
                   text = text.replace('</body>', footer + '\n</body>', 1)
-              # Tiny print credit for generated reports, without taking visual space from the live page.
               print_credit = f'<p class="print-credit">{CREDIT}</p>'
               if '<section id="print"' in text and print_credit not in text:
                   text = text.replace('</div></section>\n<div class="toast"', print_credit + '</div></section>\n<div class="toast"', 1)
               return text
 
-          # Restore full source pages from the last full versions. This removes the temporary wrapper loaders.
           base = git_show(BASE_REF, 'matra-v3.html')
           leader = git_show(LEADER_REF, 'matra-leader.html')
-
-          # Public naming cleanup. File names and internal storage keys remain technical.
           for old, new in [
               ('<title>Mátra Hard Trail v3</title>', '<title>Mátra Hard Trail – Alapjáték</title>'),
               ('#HARDTRAIL: Mátra · v3', '#HARDTRAIL: Mátra'),
               ('Mátra Hard Trail v3', 'Mátra Hard Trail – Alapjáték'),
           ]:
               base = base.replace(old, new)
-
           base = add_game_credit(base)
           leader = add_game_credit(leader)
           Path('matra-v3.html').write_text(base, encoding='utf-8')
           Path('matra-leader.html').write_text(leader, encoding='utf-8')
 
-          # Apply credit and public-name cleanup to every other HTML page.
           for path in sorted(Path('.').glob('*.html')):
               if path.name in {'matra-v3.html', 'matra-leader.html'}:
                   continue
@@ -117,7 +110,6 @@ jobs:
               if text != original:
                   path.write_text(text, encoding='utf-8')
 
-          # Documentation note: final state is no longer wrapper-based.
           readme = Path('README.md')
           if readme.exists():
               text = readme.read_text(encoding='utf-8')
