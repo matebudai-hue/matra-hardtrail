@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-05-24 – v3 stratégiai UX és auditori javítások
+
+- A meeting előtti saját stratégiai választások rövid magyarázó mondatot kaptak.
+- A meeting utáni közös stratégiai választás továbbra is rövid maradt, magyarázó mondatok nélkül.
+- A közös szakasz most már csak akkor nyílik meg, ha megvan a saját stratégia és a saját top 6.
+- Más megoldás választásánál rövid szöveges leírás kérhető a saját és a közös döntésnél is.
+- A `localStorage`-ból betöltött adatok tisztítása szigorúbb lett: ismert stratégia, ismert tárgy, maximum 6 tárgy és 1–6 közötti skálaérték maradhat meg.
+- A README és a döntési index specifikáció frissült a tényleges v3 működéshez.
+
 ## 2026-05-24 – v3 hibabiztosítás és dokumentációs rendrakás
 
 - A `matra-v3.html` mutatója teljes kitöltéshez lett kötve.
