@@ -1,131 +1,74 @@
-# Kockázatmérlegelési index – specifikáció
+# Kockázatmérlegelési index – v3 specifikáció
 
 ## Cél
 
 A mutató nem túlélési esélyt számol. Azt teszi láthatóvá, hogy a résztvevő és a csoport mennyire mérlegelte tudatosan a kockázatokat, az információkat, a döntési alternatívákat és a megbeszélés minőségét.
 
-A hivatalos név: **Kockázatmérlegelési index**.
+## Aktuális éles verzió
 
-Korábbi munkanév: Döntési biztonsági index. Ezt a dokumentációban már nem használjuk hivatalos névként, mert túl objektív biztonsági minősítést sugallna.
+- `index.html` automatikusan a `matra-v3.html` felületre irányít.
+- A `matra-v3.html` az aktuális éles résztvevői felület.
+- A `matra-v2.html` tiszta, stabil visszatérési pontként marad a repóban.
 
-## Aktuális stabil verzió
+## Kitöltési logika
 
-Az éles felület: `matra-v2.html`.
+A v3 három fázisra bontja a folyamatot:
 
-Az oldal statikus GitHub Pages felületként működik. Nincs Firebase, nincs szerveroldali adatbázis, nincs központi adatgyűjtés. A kitöltés a böngészőben fut, az állapot `localStorage`-ban tárolódik.
+1. **Meeting előtt**: saját stratégia és saját top 6 tárgy.
+2. **Meeting után**: közös stratégia, közös top 6, 12 skálakérdés és rövid indoklás.
+3. **Mutató**: index, bontás, személyes visszajelzés, páros beszélgetéshez két kérdés.
 
-## Felhasználói flow
+A mutató csak teljes kitöltés után nyitható meg. Szükséges hozzá:
 
-```text
-1. Helyzet megismerése
-2. Saját első stratégiai döntés
-3. Saját tárgysorrend
-4. Meeting / közös döntés
-5. Közös top 6 tárgy
-6. Kockázatmérlegelési kérdések
-7. Index, egyezés, erősségek, kockázati jelek
-8. Másolás / PDF / megosztás
-```
+- saját első döntés,
+- saját top 6 tárgy,
+- közös stratégia,
+- közös top 6 tárgy,
+- mind a 12 skálakérdés.
 
-## Pontozási logika
+## Pontozási szerkezet
 
-Összesen 100 pont.
+Összesen: **100 pont**.
 
-```text
-Stratégiai döntés: 10 pont
-Közös top 6 minősége: 10 pont
-Kockázatmérlegelés és megbeszélés: 70 pont
-Saját–közös top 6 egyezés: 10 pont
-```
+### 1. Stratégia – 10 pont
 
-## Stratégiai döntés
+- Az autónál maradunk: 10 pont
+- Más megoldást választunk: 6 pont
+- Elindulunk a turistaház felé: 4 pont
+- Kettéválik a csoport: 0 pont
 
-A közös végső stratégiai döntés pontozása:
+### 2. Közös top 6 – 10 pont
 
-```text
-Az autónál maradunk: 10 pont
-Más megoldást választunk: 6 pont
-Elindulunk a turistaház felé: 4 pont
-Kettéválik a csoport: 0 pont
-```
+A rendszer azt nézi, hogy a közös top 6-ban hány tárgy szerepel a szakértői top 6-ból. Ez kiegészítő mutató, nem a gyakorlat fő tanulsága.
 
-A saját első stratégiai döntés önreflexiós adat. Jelenleg nem ad külön pontot, de megjelenhet a kockázati jelek között, ha eltér a közös végső döntéstől.
+### 3. Mérlegelés – 70 pont
 
-## Közös top 6 minősége
+A 12 skálakérdés adja a mutató fő súlyát. A skála 1–6 között működik, középérték nélkül.
 
-A közös top 6 tárgyból a szakértői top 6-ba eső tárgyak aránya adja a pontot.
+### 4. Saját–közös egyezés – 10 pont
 
-```text
-szakértői top tárgyak száma / 6 × 10
-```
+A rendszer azt számolja, hány tárgy egyezik a résztvevő saját top 6-ja és a közös top 6 között.
 
-A tárgylista a felületen szándékosan kevert sorrendben jelenik meg. A szakértői sorrend csak a háttérben számol, illetve külön lenyitható összevetésben látható.
+## Visszajelzési logika
 
-## Saját–közös top 6 egyezés
+A v3 személyre szabott visszajelzést ad három rövid blokkban:
 
-A rendszer összeveti a résztvevő saját top 6 tárgyát és a közös top 6 tárgyat.
+- **A csoport működéséből ez látszik**
+- **Te így működtél a csoportban**
+- **Ebből most ez vihető tovább**
 
-Csak az számít, hogy egy tárgy benne van-e mindkét top 6-ban. A pontos helyezés ennél a mutatónál nem számít.
+A csoportműködési visszajelzésben a bevonás gyenge jele elsőbbséget kap a magas kockázatmérlegelési pontokkal szemben. Ennek oka: tréneri szempontból a csendesebb, halkabb vagy óvatosabb vélemények háttérbe szorulása fontosabb tanulási jel, mint az önmagában magas pontszám.
 
-```text
-egyező tárgyak száma / 6 × 10
-```
+## Páros beszélgetés kérdései
 
-A visszajelzés megmutatja:
+A „Gondold végig páros beszélgetésben” blokk két kérdése személyre szabott. A rendszer a résztvevő válaszai alapján választ kérdést például ezekből a mintákból:
 
-- egyezés: X / 6
-- egyező tárgyak
-- nálad bent volt, a közösben nem
-- a közösben bent volt, nálad nem
+- kimaradt saját szempont,
+- alacsony azonosulás a közös döntéssel,
+- eltérés a saját és közös top 6 között,
+- korai döntéshez igazított érvelés,
+- halkabb vélemények háttérbe szorulása.
 
-Ez nem azt méri, hogy a résztvevőnek „igaza volt-e”. Azt teszi láthatóvá, hogy a saját gondolkodásából mennyi jelent meg a közös döntésben, illetve mennyit változott a meeting során.
+## Fontos szakmai keret
 
-## Kockázatmérlegelési kérdések
-
-12 állítás van. Mindegyik 1–6-os skálán működik.
-
-```text
-1 = egyáltalán nem
-2 = inkább nem
-3 = kis részben
-4 = részben igen
-5 = nagyrészt igen
-6 = teljesen
-```
-
-Nincs középérték. A 3 inkább gyenge jel, a 4 már inkább megjelent működés.
-
-A 12 kérdés nyers pontszámát a rendszer 70 pontra skálázza.
-
-```text
-összes adott pont / 72 × 70
-```
-
-## Aktuális állítások
-
-1. A végső döntés előtt mérlegeltük a kockázatokat.
-2. A távolságot nem önmagában, hanem a körülményekkel együtt értékeltük.
-3. Különbséget tettünk a biztos és feltételezett információk között.
-4. Több megoldási irány kockázatát is összehasonlítottuk.
-5. Kimondtuk, melyik kockázatot vállaljuk tudatosan.
-6. A végső stratégiát az összegyűjtött információk alapján alakítottuk ki.
-7. A döntés iránya az információk mérlegelése után alakult ki, nem fordítva.
-8. A döntésben az érvek nagyobb szerepet kaptak, mint a hangerő vagy a határozottság.
-9. Tudatosan figyeltünk arra, hogy a csendesebbek is megszólaljanak.
-10. A halkabb vagy óvatosabb vélemények is hatottak a döntésre.
-11. A végső döntéssel tudok azonosulni.
-12. A végső döntésben megjelentek az általam fontosnak tartott szempontok.
-
-## Fontos döntés
-
-Nincs fordított pontozás. Minden kérdésnél ugyanaz az irány: a magasabb érték erősebb, tudatosabb, biztonságosabb döntési működést jelez.
-
-## Export
-
-Az oldal az alábbi kimeneteket adja:
-
-- összegzés másolása
-- 1 oldalas PDF
-- PDF küldése / megosztása a böngésző képességei szerint
-
-Statikus GitHub Pages oldalként automatikus háttérből küldött e-mail nincs. A mobilos megosztás vagy a letöltött PDF kézi csatolása a tiszta, szerver nélküli megoldás.
+A mutató nem objektív diagnózis. Tréningtermi tükör. A cél az, hogy a résztvevő ne csak azt lássa, milyen pontszám jött ki, hanem azt is, hogyan volt benne a közös döntésben.
