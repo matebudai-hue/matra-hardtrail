@@ -2,12 +2,12 @@
 
 Online résztvevői és tréneri felület a Mátra Hard Trail döntési szimulációhoz.
 
-## Aktuális stabil verzió
+## Aktuális verzió
 
 **Ez az éles, használandó verzió:**
 
 ```text
-matra-v2.html
+matra-v3.html
 ```
 
 Élő oldal:
@@ -19,14 +19,47 @@ https://matebudai-hue.github.io/matra-hardtrail/
 Közvetlen link:
 
 ```text
-https://matebudai-hue.github.io/matra-hardtrail/matra-v2.html
+https://matebudai-hue.github.io/matra-hardtrail/matra-v3.html
 ```
 
-Az `index.html` erre a stabil v2 felületre irányít át.
+Az `index.html` erre a v3 felületre irányít át.
+
+## Stabil visszatérési pont
+
+A korábbi tiszta, élesben kipróbált verzió megmaradt:
+
+```text
+matra-v2.html
+```
+
+Ha a v3 visszajelzési logikáját később túlhúznánk, ehhez a v2-höz lehet visszatérni.
+
+## Mi új a v3-ban?
+
+A v3 fő fejlesztése a kitöltés utáni, személyre szabottabb visszajelzés.
+
+Az index mellett megjelenik a blokk:
+
+```text
+Mit mutat a kitöltésed?
+```
+
+Három részből áll:
+
+1. **A csoport működéséből ez látszik**
+2. **Te ebben így voltál benne**
+3. **Ebből most ez vihető tovább**
+
+A visszajelzés nem diagnózis és nem ítélet. A kapott adatokból dolgozik, és a feldolgozást segíti.
+
+A blokk végén két páros beszélgetéshez használható kérdés van:
+
+```text
+1. Melyik saját szempontod jelent meg ténylegesen a közös döntésben?
+2. Volt olyan érv, amit hallottál, de a csoport végül nem használt?
+```
 
 ## Rövid működés
-
-A felület háromlépcsős:
 
 1. **Meeting előtt**
    - helyzetleírás
@@ -43,11 +76,12 @@ A felület háromlépcsős:
    - kockázatmérlegelési index
    - pontbontás
    - saját–közös egyezés
+   - személyre szabott visszajelzés
    - erősségek
    - kockázati jelek
    - összegzés másolása
    - 1 oldalas PDF / nyomtatás
-   - PDF megosztása vagy elküldése a böngésző lehetőségei szerint
+   - riport küldése mailben a böngésző levelezőfunkcióján keresztül
 
 ## A gyakorlat lényege
 
@@ -90,10 +124,8 @@ A hó, a hideg, a sötétedés és a felszerelés csak díszlet. A gyakorlat azt
 
 Statikus GitHub Pages oldal. Nincs Firebase, nincs adatbázis, nincs szerveroldali adattárolás. A kitöltés böngészőben fut, az aktuális állapot `localStorage`-ba mentődik.
 
-Az automatikus háttérből küldött e-mailhez szerveroldali szolgáltatás kellene, ezért a jelenlegi tiszta verzióban a PDF megosztása vagy kézi csatolása a biztonságos megoldás.
+Az automatikus háttérből küldött e-mailhez szerveroldali szolgáltatás kellene. A jelenlegi megoldás a böngésző `mailto:` funkcióját használja, vagyis a riport szövegét előkészíti elküldésre.
 
-## Stabilitási megjegyzés
-
-Ez a tiszta, működő v2 verzió. Későbbi fejlesztésnél ehhez kell visszatérni kiindulópontként.
+## Fejlesztési elv
 
 A Mátra maradjon gyors, tiszta, tréningtermi eszköz. Ne nőjön Halastó-méretű rendszerré külön döntés nélkül.
