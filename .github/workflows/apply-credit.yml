@@ -47,7 +47,9 @@ jobs:
               ]
               for p in patterns:
                   text = re.sub(p, '', text)
-              text = re.sub(r'\.global-credit\{.*?\}\s*body\{padding-bottom:34px\}\s*@media print\{\.global-credit\{display:none!important\}body\{padding-bottom:0\}\}', '', text, flags=re.S)
+              text = re.sub(r'\.global-credit\{[^}]*\}\s*body\{padding-bottom:34px\}\s*@media print\{\.global-credit\{display:none!important\}body\{padding-bottom:0\}\}', '', text, flags=re.S)
+              text = re.sub(r'\.creator-credit\{[^}]*position\s*:\s*fixed[^}]*\}\s*@media print\{\.creator-credit\{display:none!important\}\}', '', text, flags=re.S)
+              text = re.sub(r'\.creator-credit\{[^}]*position\s*:\s*fixed[^}]*\}', '', text, flags=re.S)
               return text
 
           def inject_style(text, light=False):
@@ -123,14 +125,16 @@ jobs:
         run: |
           python3 <<'PY'
           from pathlib import Path
+          import re
           import sys
           html = sorted(Path('.').glob('*.html'))
           errors = []
+          floating_credit = re.compile(r'\.(?:global-credit|creator-credit)\{[^}]*position\s*:\s*fixed', re.S)
           for p in html:
               s = p.read_text(encoding='utf-8')
               if 'Készítette: Budai Máté, 2026. Hajrá, Fradi!' not in s:
                   errors.append(f'Missing credit: {p}')
-              if 'global-credit' in s or 'position:fixed' in s:
+              if 'global-credit' in s or floating_credit.search(s):
                   errors.append(f'Floating credit remains: {p}')
           for p in ['matra-v3.html','matra-leader.html']:
               s = Path(p).read_text(encoding='utf-8')
