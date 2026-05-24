@@ -13,13 +13,15 @@ body{margin:0;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background
 <script>
 (async()=>{
   const source='https://raw.githubusercontent.com/matebudai-hue/matra-hardtrail/fd6b70f280e06a53275dde3fe5dacfee60913c86/matra-leader.html';
-  const css='<style>.creator-credit{position:fixed;left:50%;bottom:6px;transform:translateX(-50%);z-index:99999;pointer-events:none;font-size:11px;line-height:1.2;font-weight:700;color:rgba(16,42,73,.62);background:rgba(255,255,255,.76);border:1px solid rgba(16,42,73,.10);border-radius:999px;padding:4px 10px;box-shadow:0 8px 24px rgba(0,0,0,.08);backdrop-filter:blur(6px);max-width:calc(100% - 20px);white-space:nowrap}@media print{.creator-credit{display:none!important}}</style>';
-  const credit='<div class="creator-credit">Készítette: Budai Máté, 2026. Hajrá, Fradi!</div>';
+  const css='<style>.creator-credit{max-width:min(1100px,calc(100% - 24px));margin:18px auto 8px;padding:8px 0 2px;text-align:center;font-size:11px;line-height:1.35;font-weight:600;color:rgba(255,255,255,.50);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}@media print{.creator-credit{display:none!important}}</style>';
+  const credit='<footer class="creator-credit">Készítette: Budai Máté, 2026. Hajrá, Fradi!</footer>';
   try{
     const response=await fetch(source,{cache:'no-store'});
     if(!response.ok) throw new Error(String(response.status));
     let html=await response.text();
-    html=html.replace('</head>',css+'</head>').replace('</body>',credit+'</body>');
+    html=html.replace('</head>',css+'</head>');
+    html=html.replace('</div><footer class="footer">','</div>'+credit+'<footer class="footer">');
+    if(!html.includes('creator-credit')) html=html.replace('</body>',credit+'</body>');
     document.open();
     document.write(html);
     document.close();
