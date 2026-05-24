@@ -1,14 +1,165 @@
-name: Apply credit footer
+name: Finalize Matra pages
 
 on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/apply-credit.yml'
+      - 'FINALIZE_TRIGGER.md'
   workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  note:
+  finalize:
     runs-on: ubuntu-latest
     steps:
-      - name: Credit is maintained in page source
-        run: echo "Creator credits are maintained directly in the HTML pages."
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Restore full game pages and apply final polish
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          import re
+          import subprocess
+
+          CREDIT = 'Készítette: Budai Máté, 2026. Hajrá, Fradi!'
+          BASE_REF = '39d510177a2c3c5e6aa9d7291bf36c463c32bc7c'
+          LEADER_REF = 'fd6b70f280e06a53275dde3fe5dacfee60913c86'
+
+          def git_show(ref, path):
+              return subprocess.check_output(['git', 'show', f'{ref}:{path}'], text=True)
+
+          def remove_old_credit(text):
+              patterns = [
+                  r'\n?<p class="credit">Készítette: Budai Máté, 2026\. Hajrá, Fradi!</p>',
+                  r'\n?<p class="credit-line">Készítette: Budai Máté, 2026\. Hajrá, Fradi!</p>',
+                  r'\n?<footer class="credit-line">Készítette: Budai Máté, 2026\. Hajrá, Fradi!</footer>',
+                  r'\n?<footer class="creator-credit">Készítette: Budai Máté, 2026\. Hajrá, Fradi!</footer>',
+                  r'\n?<div class="global-credit">Készítette: Budai Máté, 2026\. Hajrá, Fradi!</div>',
+                  r'\n?<div class="creator-credit">Készítette: Budai Máté, 2026\. Hajrá, Fradi!</div>',
+                  r'\n?<p class="print-credit">Készítette: Budai Máté, 2026\. Hajrá, Fradi!</p>',
+              ]
+              for p in patterns:
+                  text = re.sub(p, '', text)
+              text = re.sub(r'\.global-credit\{.*?\}\s*body\{padding-bottom:34px\}\s*@media print\{\.global-credit\{display:none!important\}body\{padding-bottom:0\}\}', '', text, flags=re.S)
+              return text
+
+          def inject_style(text, light=False):
+              color = 'rgba(16,42,73,.45)' if light else 'rgba(255,255,255,.50)'
+              css = f'''.creator-credit{{max-width:min(1100px,calc(100% - 24px));margin:18px auto 8px;padding:8px 0 2px;text-align:center;font-size:11px;line-height:1.35;font-weight:600;color:{color};font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}}.print-credit{{display:none}}@media print{{.creator-credit{{display:none!important}}.print-credit{{display:block!important;text-align:center;font-size:9px;line-height:1.2;color:#6a7787;margin-top:4px}}}}'''
+              if '.creator-credit' not in text:
+                  if '</style>' in text:
+                      text = text.replace('</style>', css + '\n</style>', 1)
+                  elif '</head>' in text:
+                      text = text.replace('</head>', '<style>' + css + '</style>\n</head>', 1)
+              return text
+
+          def add_page_credit(text, light=False):
+              text = remove_old_credit(text)
+              text = inject_style(text, light)
+              footer = f'<footer class="creator-credit">{CREDIT}</footer>'
+              if '</body>' in text and footer not in text:
+                  text = text.replace('</body>', footer + '\n</body>', 1)
+              return text
+
+          def add_game_credit(text):
+              text = remove_old_credit(text)
+              text = inject_style(text, light=False)
+              footer = f'<footer class="creator-credit">{CREDIT}</footer>'
+              if '<footer class="footer"' in text:
+                  # Put the credit near the existing page footer, not as a floating layer.
+                  text = re.sub(r'(</footer>)(</div>\s*<section id="print")', r'\1' + footer + r'\2', text, count=1)
+                  text = re.sub(r'(</footer>)(</div>\s*</body>)', r'\1' + footer + r'\2', text, count=1)
+              if footer not in text:
+                  text = text.replace('</body>', footer + '\n</body>', 1)
+              # Tiny print credit for generated reports, without taking visual space from the live page.
+              print_credit = f'<p class="print-credit">{CREDIT}</p>'
+              if '<section id="print"' in text and print_credit not in text:
+                  text = text.replace('</div></section>\n<div class="toast"', print_credit + '</div></section>\n<div class="toast"', 1)
+              return text
+
+          # Restore full source pages from the last full versions. This removes the temporary wrapper loaders.
+          base = git_show(BASE_REF, 'matra-v3.html')
+          leader = git_show(LEADER_REF, 'matra-leader.html')
+
+          # Public naming cleanup. File names and internal storage keys remain technical.
+          for old, new in [
+              ('<title>Mátra Hard Trail v3</title>', '<title>Mátra Hard Trail – Alapjáték</title>'),
+              ('#HARDTRAIL: Mátra · v3', '#HARDTRAIL: Mátra'),
+              ('Mátra Hard Trail v3', 'Mátra Hard Trail – Alapjáték'),
+          ]:
+              base = base.replace(old, new)
+
+          base = add_game_credit(base)
+          leader = add_game_credit(leader)
+          Path('matra-v3.html').write_text(base, encoding='utf-8')
+          Path('matra-leader.html').write_text(leader, encoding='utf-8')
+
+          # Apply credit and public-name cleanup to every other HTML page.
+          for path in sorted(Path('.').glob('*.html')):
+              if path.name in {'matra-v3.html', 'matra-leader.html'}:
+                  continue
+              text = path.read_text(encoding='utf-8')
+              original = text
+              text = text.replace('Mátra Hard Trail · statikus GitHub Pages felület', 'Mátra Hard Trail')
+              text = text.replace('Mátra Hard Trail · statikus GitHub Pages oldal', 'Mátra Hard Trail')
+              text = text.replace('Stabil v3 alapverzió', 'Stabil alapjáték')
+              text = text.replace('Mátra Hard Trail v3', 'Mátra Hard Trail – Alapjáték')
+              text = text.replace('alapjáték v3', 'alapjáték')
+              text = text.replace('v3 alapverzió', 'alapverzió')
+              text = add_page_credit(text, light=True)
+              if text != original:
+                  path.write_text(text, encoding='utf-8')
+
+          # Documentation note: final state is no longer wrapper-based.
+          readme = Path('README.md')
+          if readme.exists():
+              text = readme.read_text(encoding='utf-8')
+              marker = '## Véglegesítési audit\n'
+              note = marker + '\n- A két fő játékoldal teljes HTML-forrásból fut, nem wrapperből.\n- A szerzői credit minden HTML felületen visszafogottan, oldalba építve jelenik meg.\n- A nyilvános felületeken az alapjáték elnevezés szerepel; a `matra-v3.html` fájlnév technikai visszatérési pont.\n\n'
+              text = re.sub(r'## Véglegesítési audit\n[\s\S]*?(?=## |\Z)', '', text)
+              readme.write_text(text.rstrip() + '\n\n' + note, encoding='utf-8')
+          PY
+
+      - name: Verify final state
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          import sys
+          html = sorted(Path('.').glob('*.html'))
+          errors = []
+          for p in html:
+              s = p.read_text(encoding='utf-8')
+              if 'Készítette: Budai Máté, 2026. Hajrá, Fradi!' not in s:
+                  errors.append(f'Missing credit: {p}')
+              if 'global-credit' in s or 'position:fixed' in s:
+                  errors.append(f'Floating credit remains: {p}')
+          for p in ['matra-v3.html','matra-leader.html']:
+              s = Path(p).read_text(encoding='utf-8')
+              if 'raw.githubusercontent.com/matebudai-hue/matra-hardtrail' in s or 'Betöltés...' in s:
+                  errors.append(f'Wrapper loader remains: {p}')
+          if 'statikus GitHub Pages' in Path('index.html').read_text(encoding='utf-8'):
+              errors.append('GitHub Pages wording remains on index.html')
+          if errors:
+              print('\n'.join(errors))
+              sys.exit(1)
+          print('Final audit passed for:', ', '.join(str(p) for p in html))
+          PY
+
+      - name: Commit finalized files
+        run: |
+          if git diff --quiet; then
+            echo "No changes needed."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add *.html README.md
+          git commit -m "Finalize Matra Hard Trail pages"
+          git push
