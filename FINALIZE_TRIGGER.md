@@ -5,3 +5,4 @@ Javítási csomag indítása: wrapper megszüntetés, credit egységesítés, ny
 Újrafuttatás: véglegesítés és ellenőrzés.
 
 Run: 2026-05-25 final audit package.
+Run: 2026-05-25 after workflow update.
