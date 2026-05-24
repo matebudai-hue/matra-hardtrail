@@ -3,45 +3,36 @@
 ## Kész / stabil alap
 
 - Külön `matra-hardtrail` repo létrejött.
-- GitHub Pages működik.
-- Az élő oldal az `index.html` átirányításán keresztül a `matra-v2.html` felületre visz.
-- A Mátra levált a Halastóról, külön fejleszthető.
-- A jelenlegi stabil verzió mobilos, statikus, Firebase nélküli meetingfelület.
-- Van saját első döntés, saját tárgysorrend, közös top 6, közös stratégia, 12 kérdéses kockázatmérlegelési index, saját–közös egyezés és 1 oldalas PDF.
+- Az éles belépési pont az `index.html`.
+- Az `index.html` jelenleg a `matra-v3.html` felületre irányít.
+- A `matra-v3.html` az aktuális stabil éles verzió.
+- A `matra-v2.html` tiszta visszatérési pontként marad meg.
+- A Halastó repót és felületet ez a projekt nem érinti.
 
-## Rövid táv
+## v3-ban lezárt fejlesztések
 
-- Éles mobilos teszt Androidon és iPhone-on.
-- PDF nézet ellenőrzése több böngészőben.
-- A kérdések tréneri tesztelése több csoporttal.
-- A vendégházas sztori finomítása, ha a helyzet még mindig nem elég erős.
-- A tárgylista szakmai finomhangolása, de a megjelenési sorrend továbbra is kevert maradjon.
+- Háromfázisú UX: meeting előtt, meeting után, mutató.
+- Saját stratégia és saját top 6 rögzítése.
+- Közös stratégia és közös top 6 rögzítése.
+- 12 darab 1–6-os skálakérdés, középérték nélkül.
+- Kockázatmérlegelési index bontással.
+- Saját–közös top 6 egyezés számítása.
+- Személyre szabott visszajelzés a csoportműködésről és a résztvevő szerepéről.
+- Személyre szabott páros beszélgetési kérdések.
+- Teljes kitöltés ellenőrzése a mutató megnyitása előtt.
+- Egyoldalas PDF / nyomtatási nézet.
+- E-mail előkészítés `mailto:` alapon.
 
-## Középtáv
+## Későbbi lehetőségek
 
-- Eredmény megjelenítése csak gombnyomás után, ha a folyamatos pontszám túl hamar befolyásolja a kitöltést.
-- Egyéni és csoportos kitöltési nézet különválasztása, ha a tréningtermi használat ezt igényli.
-- Több csoport eredményének manuális összehasonlítása egyszerű import/export logikával.
-- Export CSV vagy JSON formátumban, ha már tényleg kell az utólagos elemzéshez.
+Ezek nem szükségesek a mostani stabil használathoz:
 
-## Hosszú táv
+- Valódi beküldés központi dashboardra Firebase vagy más backend segítségével.
+- Több csoport eredményének összehasonlítása.
+- Tréneri dashboard aggregált mutatókkal.
+- AI-alapú beszélgetéselemzés hangfelvételből.
+- Külön adminfelület a tárgylista vagy kérdéssor módosításához.
 
-- Firebase-alapú adatbeküldés csak akkor, ha több csoport párhuzamos központi figyelése valódi igény lesz.
-- Központi tréneri dashboard csak külön döntés után.
-- Eseménykártyák digitális kezelése.
-- AI Decision Replay előkészítése.
-- Hangfelvétel alapján döntési mintázatok elemzése.
+## Stabilitási megjegyzés
 
-## Tudatosan nem cél most
-
-- Ne legyen belőle Halastó-méretű rendszer.
-- Ne legyen kötelező belépés, adatbázis vagy tréneri adminfelület.
-- Ne gyűjtsön automatikusan személyes adatot.
-- Ne adjon objektív túlélési esélyt.
-- Ne sugallja, hogy a pontszám „megmondja az igazságot”.
-
-## Szakmai elv
-
-A rendszer csak akkor nőhet nagyobbra, ha közben nem veszíti el az egyszerűségét. A Mátra nem lehet Halastó-méretű monstrum.
-
-A cél egy gyorsan használható, tiszta, tréningtermi döntési labor.
+A v3 most tréningtermi használatra alkalmas, statikus, backend nélküli verzió. A további fejlesztéseknél érdemes ezt stabil alapverzióként kezelni, és nagyobb változtatás előtt külön fájlban vagy külön branchben dolgozni.
