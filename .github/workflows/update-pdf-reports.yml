@@ -1,4 +1,4 @@
-name: Update Matra PDF reports
+name: Update Matra reports and feedback
 
 on:
   workflow_dispatch:
@@ -10,90 +10,106 @@ permissions:
   contents: write
 
 jobs:
-  update-pdf-reports:
+  update-matra:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Update print report templates
+      - name: Apply targeted fixes
         run: |
           python3 <<'PY'
           from pathlib import Path
           import re
+          import subprocess
+          import tempfile
 
+          repo = Path('.')
+          base = repo / 'matra-v3.html'
+          leader = repo / 'matra-leader.html'
           credit = 'Készítette: Budai Máté, 2026. Hajrá, Fradi!'
 
-          print_css = '''@media print{@page{size:A4 portrait;margin:8mm}body{background:#fff}.wrap{display:none}#print{display:block!important;font-family:Inter,Arial,sans-serif;color:#102033}.page{height:281mm;overflow:hidden;padding:0;font-size:9px;line-height:1.18}.print-head{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:start;border-bottom:2px solid #0b223d;padding-bottom:5px;margin-bottom:5px}.page h1{font-size:18px;letter-spacing:-.03em;margin:0 0 2px;line-height:1.05}.page h2{font-size:10px;margin:0 0 3px;color:#0b223d}.page h3{font-size:9px;margin:0 0 2px;color:#0b223d}.print-sub{font-size:8px;color:#63748a;margin:0}.scorep{font-size:28px;font-weight:950;text-align:right;line-height:.9}.printgrid{display:grid;grid-template-columns:1fr 1fr;gap:4px}.box{border:1px solid #d8e1ea;border-radius:8px;padding:4px;margin:0;background:#fff}.box.wide{grid-column:1/-1}.compare{display:grid;grid-template-columns:1fr 1fr;gap:4px}.compact-list{margin:0;padding-left:15px}.compact-list li{margin:0 0 1px}.qtable{width:100%;border-collapse:collapse;font-size:7.4px;line-height:1.1}.qtable td{border-bottom:1px solid #edf1f5;padding:1px 3px;vertical-align:top}.qtable td:last-child{text-align:right;font-weight:900;width:18px}.print-feedback{font-size:8.2px}.print-feedback p{margin:0 0 3px}.print-reflect{margin:0;padding-left:15px}.print-reflect li{margin:0 0 2px}.tagline{margin:3px 0 0;font-weight:950;color:#0b223d}}'''
+          def read(path):
+              return path.read_text(encoding='utf-8')
 
-          base_print = f'''<section id="print" class="hide"><div class="page"><div class="print-head"><div><h1>Mátra Hard Trail – Alapjáték</h1><p class="print-sub" id="pMeta">Csoport: -</p></div><div class="scorep" id="pscore">0 / 100</div></div><div class="printgrid"><div class="box wide"><h2>Döntés: én vs. csoport</h2><div class="compare"><div><h3>Én így döntöttem</h3><p id="pOwnStrategy"></p></div><div><h3>A csoport így döntött</h3><p id="pTeamStrategy"></p></div></div></div><div class="box wide"><h2>Top 6 tárgyak: én vs. csoport</h2><div class="compare"><div><h3>Saját top 6</h3><ol id="pOwnTop" class="compact-list"></ol></div><div><h3>Közös top 6</h3><ol id="pTeamTop" class="compact-list"></ol></div></div><p class="print-sub" id="pexpert"></p></div><div class="box wide"><h2>12 kérdés válaszai</h2><p class="print-sub">Skála: 1 = egyáltalán nem, 6 = teljesen</p><table class="qtable"><tbody id="pQRows"></tbody></table></div><div class="box wide print-feedback"><h2>Személyes visszajelzés</h2><p><b>A csoport működéséből ez látszik:</b> <span id="pg"></span></p><p><b>Te így működtél a csoportban:</b> <span id="pp"></span></p><p><b>Ebből most ez vihető tovább:</b> <span id="pf"></span></p></div><div class="box wide"><h2>Gondold végig páros beszélgetésben</h2><ol id="prq" class="print-reflect"></ol><p class="tagline">Nem a hó volt az igazi veszély.</p></div></div><p class="print-credit">{credit}</p></div></section>'''
+          def write(path, text):
+              path.write_text(text, encoding='utf-8')
 
-          leader_print = f'''<section id="print" class="hide"><div class="page"><div class="print-head"><div><h1>Mátra Hardtrail – A vezető visszatér</h1><p class="print-sub" id="pMeta">Csoport: -</p></div><div class="scorep" id="pscore">0 / 100</div></div><div class="printgrid"><div class="box wide"><h2>Döntés: én vs. csoport</h2><div class="compare"><div><h3>Én így döntöttem</h3><p id="pOwnStrategy"></p></div><div><h3>A csoport így döntött</h3><p id="pTeamStrategy"></p></div></div></div><div class="box wide"><h2>Top 6 tárgyak: én vs. csoport</h2><div class="compare"><div><h3>Saját top 6</h3><ol id="pOwnTop" class="compact-list"></ol></div><div><h3>Közös top 6</h3><ol id="pTeamTop" class="compact-list"></ol></div></div><p class="print-sub" id="pexpert"></p></div><div class="box wide"><h2>12 kérdés válaszai</h2><p class="print-sub">Skála: 1 = egyáltalán nem, 6 = teljesen</p><table class="qtable"><tbody id="pQRows"></tbody></table></div><div class="box wide print-feedback"><h2>Személyes visszajelzés</h2><p><b>Döntési folyamat:</b> <span id="pd"></span></p><p><b>Vezető visszatérése:</b> <span id="pl"></span></p><p><b>Saját szerep:</b> <span id="pp"></span></p></div><div class="box wide"><h2>Gondold végig páros beszélgetésben</h2><ol id="prq" class="print-reflect"></ol><p class="tagline">Nem a hó volt az igazi veszély.</p></div></div><p class="print-credit">{credit}</p></div></section>'''
+          def replace_exact(text, old, new, label):
+              if new in text:
+                  return text
+              if old not in text:
+                  raise SystemExit(f'Missing expected block for {label}')
+              return text.replace(old, new, 1)
 
-          base_helper = r'''function printListHtml(list){return list.length?list.map(id=>`<li>${esc(itemName(id))}</li>`).join(''):'<li>nincs adat</li>'}
-          function renderPrintReport(c,x,rq){if(!$('pOwnStrategy'))return;$('pMeta').textContent=(S.teamName?'Csoport: '+S.teamName+' · ':'')+'Azonos tárgyak: '+c.same+' / 6 · Szakértői fedés: '+c.expert+' / 6';$('pOwnStrategy').textContent=strategyLine('ps','psOther');$('pTeamStrategy').textContent=strategyLine('ts','tsOther');$('pOwnTop').innerHTML=printListHtml(S.my);$('pTeamTop').innerHTML=printListHtml(S.team);$('pQRows').innerHTML=q.map((qq,i)=>`<tr><td>${i+1}. ${esc(qq[0])}</td><td>${S.q[i]||'-'}</td></tr>`).join('')}'''
-
-          leader_helper = r'''function strategyLine(key,other){return strategyName(S[key])+(S[key]==='mas'&&S[other]?' – '+S[other]:'')}
-          function printListHtml(list){return list.length?list.map(id=>`<li>${esc(itemName(id))}</li>`).join(''):'<li>nincs adat</li>'}
-          function renderPrintReport(r,f){if(!$('pOwnStrategy'))return;$('pMeta').textContent=(S.teamName?'Csoport: '+S.teamName+' · ':'')+'Saját-közös egyezés: '+r.overlap+' / 6 · Szakértői tárgyfedés: '+r.expert+' / 10';$('pOwnStrategy').textContent=strategyLine('ps','psOther');$('pTeamStrategy').textContent=strategyLine('ts','tsOther');$('pOwnTop').innerHTML=printListHtml(S.my);$('pTeamTop').innerHTML=printListHtml(S.team);$('pQRows').innerHTML=questions.map((qq,i)=>`<tr><td>${i+1}. ${esc(qq.t)}</td><td>${S.q[i]||'-'}</td></tr>`).join('')}'''
-
-          def replace_print_css(text):
-              pattern = r'@media print\{@page\{size:A4 portrait;margin:10mm\}body\{background:#fff\}.*?\.scorep\{font-size:36px;font-weight:950\}\}'
-              text2, n = re.subn(pattern, print_css, text, count=1, flags=re.S)
+          def replace_between(text, start, end, replacement, label):
+              if replacement in text:
+                  return text
+              pattern = re.escape(start) + r'.*?' + re.escape(end)
+              new_text, n = re.subn(pattern, replacement + end, text, count=1, flags=re.S)
               if n != 1:
-                  raise SystemExit('print CSS block not replaced')
-              return text2
+                  raise SystemExit(f'Could not replace {label}')
+              return new_text
 
-          def replace_print_section(text, html):
-              text2, n = re.subn(r'<section id="print" class="hide">.*?</section>\n<div class="toast"', html+'\n<div class="toast"', text, count=1, flags=re.S)
-              if n != 1:
-                  raise SystemExit('print section not replaced')
-              return text2
+          base_feedback = """function feedback(c){if(!complete().ok)return{g:'Még nincs elég adat ahhoz, hogy értelmes mintázatot mutassunk.',p:'Töltsd ki a közös döntést, a közös top 6-ot és mind a 12 kérdést.',f:'A visszajelzés akkor lesz használható, ha a döntési folyamat is látszik, nem csak a végeredmény.'};let g,p,f;const early=S.q[6]<=3,weakArgs=S.q[7]<=3,quietWeak=S.q[8]<=3||S.q[9]<=3,strongRisk=c.risk>=4.7,strongProcess=c.process>=4.5,strongGroup=c.group>=4.5;if(early&&weakArgs)g='A döntés iránya valószínűleg túl korán rögzült. A kapott adatok alapján a csoport inkább egy gyorsan kialakuló irányhoz rendezhette az érveket, miközben az érvek és a hangerő aránya is kérdéses maradt.';else if(early)g='A döntés iránya valószínűleg túl korán rögzült. Érdemes ránézni, hogy az információk valóban alakították-e az irányt, vagy inkább a már kialakult döntést támasztották alá.';else if(quietWeak)g='A kapott adatok alapján a csoport gondolkodott a helyzetről, de a csendesebb vagy óvatosabb szempontok nem kaptak elég súlyt. Ilyenkor a döntés tartalma akár jó is lehet, a folyamat mégis sérülékeny.';else if(strongRisk&&strongProcess&&strongGroup)g='A kapott adatok alapján a csoport több kockázatot mérlegelt, az információk érdemben alakították az irányt, és a vélemények nagy része be tudott kerülni a közös döntésbe.';else g='A kapott adatok alapján a csoport több használható elemet is bevont a döntésbe, de nem minden ponton látszik ugyanilyen erősnek a mérlegelés, az érvek súlya és a vélemények bevonása.';if(c.same<=2&&S.q[10]>=4&&S.q[11]>=4)p='A saját első top 6-od és a közös top 6 között kevés egyezés látszik, mégis tudsz azonosulni a döntéssel, és a saját szempontjaid is megjelentek. Ez valódi elmozdulást és tanulást jelezhet a közös gondolkodásban.';else if(c.same<=2&&S.q[10]>=4)p='A saját első gondolkodásod eltért a közös iránytól, mégis tudsz azonosulni a végső döntéssel. Úgy tűnik, a csoport érvei elmozdítottak az első álláspontodtól.';else if(c.same>=4&&S.q[10]<=3)p='A tárgyválasztásod közel volt a közös döntéshez, belül mégsem állsz teljesen mögötte. Ilyenkor gyakran a döntés módja okoz feszültséget, nem maga a tartalom.';else if(S.q[11]<=3)p='A válaszaid alapján jelen voltál a döntésben, de nem minden fontos szempontod jutott be a közös irányba. Érdemes megnézni, mit mondtál ki, mit engedtél el, és mi maradt benned.';else if(S.q[10]<=3)p='A közös döntés számodra csak részben vállalható. Ez arra utalhat, hogy volt benned fenntartás, vagy nem érezted teljesen sajátodnak a végső irányt.';else p='A válaszaid alapján aktívan kapcsolódtál a közös döntéshez: a saját szempontjaid megjelentek, és a végső iránnyal is tudsz azonosulni.';if(early)f='A továbbvihető kérdés most az, hogy mikor dőlt el az irány: valódi mérlegelés után, vagy egy korán kialakult döntéshez kerestetek érveket.';else if(weakArgs||quietWeak)f='A legérdekesebb tanulság most az lehet, hogy mi kapott valódi súlyt: az érvek, a határozottság, vagy azok a halkabb szempontok, amelyek elsőre könnyen háttérben maradnak.';else if(c.same<=2)f='A legjobb beszélgetés most abból indulhat, hogy mi változott a saját első gondolkodásod és a közös döntés között.';else f='A következő beszélgetésben azt érdemes megfogni, pontosan melyik információ, érv vagy vélemény fordította a döntést a végső irányba.';return{g,p,f}}
+"""
 
-          def update_base(path):
-              text = Path(path).read_text(encoding='utf-8')
-              text = replace_print_css(text)
-              text = replace_print_section(text, base_print)
-              if 'function renderPrintReport(c,x,rq)' not in text:
-                  text = text.replace('function render(){save();', base_helper+'\nfunction render(){save();', 1)
-              old = "$('prq').innerHTML=rq.map(v=>'<li>'+esc(v)+'</li>').join('');applyPhase()}"
-              new = "$('prq').innerHTML=rq.map(v=>'<li>'+esc(v)+'</li>').join('');renderPrintReport(c,x,rq);applyPhase()}"
-              if old in text and 'renderPrintReport(c,x,rq);applyPhase()' not in text:
-                  text = text.replace(old, new, 1)
-              elif 'renderPrintReport(c,x,rq);applyPhase()' not in text:
-                  raise SystemExit('base render hook not inserted')
-              Path(path).write_text(text, encoding='utf-8')
+          leader_feedback = """function fb(){const r=report();let decision,leader,personal;const early=S.q[3]<=3,weakRisk=S.q[0]<=3||S.q[1]<=3||S.q[2]<=3,startedAlone=S.q[4]>=4,leaderReset=S.q[5]<=3,infoWeak=S.q[6]<=3,leaderFocusWeak=S.q[7]<=3,ownWeak=S.q[8]<=3,ownImpactWeak=S.q[9]<=3,listeningWeak=S.q[10]<=3,identifyWeak=S.q[11]<=3;decision=byLevel(r.dAvg,'A döntési folyamatban erősen megjelent a kockázatok, az információk és a körülmények mérlegelése. A csoport nagy eséllyel nem csak gyors választ keresett, hanem próbálta érteni is a helyzetet.','A döntési folyamatban volt mérlegelés, de néhány ponton valószínűleg gyorsabban záródott az irány, mint amennyire a helyzet indokolta volna. Érdemes megnézni, mely információk kaptak túl nagy vagy túl kicsi súlyt.','A döntési folyamat inkább gyors iránykeresésnek tűnik, mint alapos kockázatmérlegelésnek. Ilyenkor könnyen előbb születik meg a válasz, és utána kezdi a csoport hozzáigazítani az érveket.');if(early)decision='A döntés iránya valószínűleg túl korán rögzült. A válaszaid alapján érdemes megnézni, hogy az információk alakították-e a stratégiát, vagy a stratégia után rendeztétek hozzá az információkat.';else if(weakRisk)decision='A döntésben volt közös gondolkodás, de a kockázatok vagy az információk egy része kisebb súlyt kaphatott. Ilyenkor a választott irány akár működőképes is lehet, a döntési alap mégis billeg.';if(leaderReset&&infoWeak)leader='A vezető visszatérése a válaszaid alapján erősen átrendezhette a csoport addigi gondolkodását, miközben a nála lévő plusz információk sem feltétlenül tisztították a helyzetet. Ez a verzió egyik legerősebb tanulási pontja.';else if(leaderReset)leader='A vezető visszatérése után az addig elhangzott szempontok egy része háttérbe szorulhatott. Itt érdemes megnézni, a csoport mennyire tudta megtartani a saját gondolkodását.';else if(infoWeak)leader='A vezető visszatért, de a nála lévő plusz információk a válaszaid alapján nem feltétlenül segítették eléggé a tisztább döntést. A kérdés az, hogy információként vagy tekintélyként jelentek-e meg.';else if(leaderFocusWeak)leader='A vezető jelenléte nem teljesen tartotta a fókuszt a jelenlegi helyzet kockázatain. Ilyenkor könnyen előkerül a korábbi döntés igazolása vagy a felelősség kérdése.';else if(startedAlone)leader='A csoport a vezető távollétében is elindította a közös gondolkodást, és a vezető visszatérése a válaszok alapján inkább hozzáadott ehhez, mint lenullázta.';else leader=byLevel(r.lAvg,'A vezető visszatérése a válaszaitok alapján segítette a csoportot: nem törölte el az addigi gondolkodást, hanem hozzáadott a közös döntéshez.','A vezető visszatérésének hatása vegyesnek látszik. Volt, amiben segíthetett, de érdemes ránézni, mi történt az addig kialakult csoportdinamikával, amikor visszajött.','A vezető visszatérése a válaszaitok alapján inkább bizonytalanságot vagy igazodást hozhatott, mint tisztább döntési folyamatot.');if(ownWeak&&ownImpactWeak)personal='A válaszaid alapján inkább követted a folyamatot, mint alakítottad. Ez nem hiba, de pontos tükör: nyomás alatt könnyű visszahúzódni, főleg akkor, ha a vezető visszatérése átírja a csoportteret.';else if(ownImpactWeak)personal='Kimondhattál fontos szempontokat, de ezek nem hatottak elég erősen a közös döntésre. A személyes tanulság itt az lehet, hogyan lehet egy szempontot úgy képviselni, hogy be is épüljön.';else if(listeningWeak)personal='A saját hatásod megjelent, de mások eltérő érveire kevésbé tudtál nyitva maradni. Ez különösen vezetői helyzetben érdekes, mert a csoport ilyenkor egyszerre figyel rád és igazodik hozzád.';else if(identifyWeak)personal='A végső döntéssel csak részben tudsz azonosulni. Érdemes megnézni, hogy a tartalommal volt bajod, vagy azzal, ahogyan a döntés megszületett.';else personal=byLevel(r.pAvg,'A saját szereped aktívnak látszik: kimondtad a fontos szempontjaidat, figyeltél másokra, és a végső döntés mögé is oda tudsz állni.','A saját szereped részben megjelent, de nem biztos, hogy minden fontos szempontod ténylegesen hatott a döntésre. Érdemes végiggondolni, hol maradt benned valami.','A válaszaid alapján inkább benne voltál a folyamatban, mint alakítottad azt. Ez nem hiba, de jó tükör: nyomás alatt könnyű figyelőből követővé válni.');let qs=[];if(early)qs.push('Mikor alakult ki a döntés iránya, és mi történt utána az információkkal?');if(leaderReset||infoWeak)qs.push('Mi változott a csoportban abban a pillanatban, amikor a vezető visszatért?');if(ownImpactWeak)qs.push('Melyik saját szempontod nem hatott úgy a közös döntésre, ahogy szeretted volna?');if(identifyWeak)qs.push('Mi kellett volna ahhoz, hogy jobban mögé tudj állni a végső döntésnek?');if(!qs.length&&r.dAvg>=4.8&&r.lAvg>=4.8&&r.pAvg>=4.8)qs.push('Mi segített abban, hogy a csoport vezetővel és vezető nélkül is tudott gondolkodni?');if(qs.length<2)qs.push('Mit tanultál arról, hogyan hat rád egy visszatérő vezető jelenléte bizonytalan helyzetben?');if(qs.length<2)qs.push('Mit csinálnál másképp egy következő hasonló döntési helyzetben?');return{decision,leader,personal,qs:qs.slice(0,2)}}
+"""
 
-          def update_leader(path):
-              text = Path(path).read_text(encoding='utf-8')
-              text = replace_print_css(text)
-              text = replace_print_section(text, leader_print)
-              if 'function renderPrintReport(r,f)' not in text:
-                  text = text.replace('function render(){save();', leader_helper+'\nfunction render(){save();', 1)
-              old = "$('prq').innerHTML=f.qs.map(x=>`<li>${esc(x)}</li>`).join('')}"
-              new = "$('prq').innerHTML=f.qs.map(x=>`<li>${esc(x)}</li>`).join('');renderPrintReport(r,f)}"
-              if old in text and 'renderPrintReport(r,f)}' not in text:
-                  text = text.replace(old, new, 1)
-              elif 'renderPrintReport(r,f)}' not in text:
-                  raise SystemExit('leader render hook not inserted')
-              Path(path).write_text(text, encoding='utf-8')
+          # Alapjáték: indexlogika és visszajelzés
+          text = read(base)
+          text = replace_exact(
+              text,
+              "processScore=Math.round(S.q.reduce((a,b)=>a+b,0)/72*70)",
+              "processScore=Math.round(S.q.reduce((a,b)=>a+(b?((b-1)/5):0),0)/12*70)",
+              'base process score normalization'
+          )
+          text = replace_exact(
+              text,
+              "a.push('Úgy tűnhet, hogy előbb született irány, és az érvek csak utána igazodtak hozzá.')",
+              "a.push('A döntés iránya valószínűleg túl korán rögzült: előbb születhetett irány, és az érvek csak utána igazodtak hozzá.')",
+              'base risk wording'
+          )
+          text = replace_between(text, 'function feedback(c){', 'function reflect(c){', base_feedback, 'base feedback')
+          write(base, text)
 
-          update_base('matra-v3.html')
-          update_leader('matra-leader.html')
+          # Vezetői verzió: személyre szabottabb visszajelzés
+          text = read(leader)
+          text = replace_between(text, 'function fb(){', 'function verdict', leader_feedback, 'leader feedback')
+          write(leader, text)
 
-          for path, title in [('matra-v3.html','Alapjáték'),('matra-leader.html','A vezető visszatér')]:
-              text = Path(path).read_text(encoding='utf-8')
-              checks = [
+          # Biztonsági ellenőrzés: HTML/JS szerkezet, kulcselemek, régi hiba hiánya
+          checks = {
+              'matra-v3.html': [
+                  "processScore=Math.round(S.q.reduce((a,b)=>a+(b?((b-1)/5):0),0)/12*70)",
+                  'A döntés iránya valószínűleg túl korán rögzült',
                   'pOwnStrategy','pTeamStrategy','pOwnTop','pTeamTop','pQRows',
-                  'Skála: 1 = egyáltalán nem, 6 = teljesen',
-                  'renderPrintReport', credit
-              ]
-              missing = [c for c in checks if c not in text]
+                  'Skála: 1 = egyáltalán nem, 6 = teljesen', credit,
+                  'Nem a hó volt az igazi veszély.'
+              ],
+              'matra-leader.html': [
+                  'A vezető visszatérése a válaszaid alapján erősen átrendezhette',
+                  'pOwnStrategy','pTeamStrategy','pOwnTop','pTeamTop','pQRows',
+                  'Skála: 1 = egyáltalán nem, 6 = teljesen', credit,
+                  'Nem a hó volt az igazi veszély.'
+              ],
+          }
+          for path, needles in checks.items():
+              content = read(repo / path)
+              missing = [n for n in needles if n not in content]
               if missing:
-                  raise SystemExit(f'{path} missing: {missing}')
-              if text.count('<section id="print" class="hide">') != 1:
-                  raise SystemExit(f'{path} has wrong print section count')
-              if 'raw.githubusercontent.com' in text:
-                  raise SystemExit(f'{path} still contains raw.githubusercontent.com')
+                  raise SystemExit(f'{path}: missing {missing}')
+              if content.count('<section id="print" class="hide">') != 1:
+                  raise SystemExit(f'{path}: wrong print section count')
+              if 'processScore=Math.round(S.q.reduce((a,b)=>a+b,0)/72*70)' in content:
+                  raise SystemExit(f'{path}: old processScore logic remains')
 
+              script = content.split('<script>',1)[1].rsplit('</script>',1)[0]
+              tmp = tempfile.NamedTemporaryFile('w', suffix='.js', delete=False, encoding='utf-8')
+              tmp.write(script)
+              tmp.close()
+              subprocess.run(['node','--check',tmp.name], check=True)
+
+          print('Targeted Matra fixes applied and validated.')
           PY
       - name: Commit changes
         run: |
@@ -104,5 +120,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add matra-v3.html matra-leader.html
-          git commit -m "Update one-page PDF report layout"
+          git commit -m "Improve Matra feedback logic safely"
           git push
