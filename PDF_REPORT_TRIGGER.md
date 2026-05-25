@@ -1,3 +1,5 @@
-# PDF report update trigger
+# PDF report update note
 
-This file triggers the GitHub Actions workflow that refreshes the one-page PDF report layouts for the Alapjáték and A vezető visszatér pages.
+Maintenance note for the one-page report layouts and feedback logic.
+
+Updated: 2026-05-25.
