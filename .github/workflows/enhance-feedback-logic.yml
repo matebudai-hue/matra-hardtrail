@@ -1,0 +1,225 @@
+name: Enhance Matra feedback logic
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'FEEDBACK_LOGIC_TRIGGER.md'
+
+permissions:
+  contents: write
+
+jobs:
+  enhance-feedback:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply scoring and personalized feedback logic
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          import re
+
+          START='/* MATRA_ENHANCED_FEEDBACK_START */'
+          END='/* MATRA_ENHANCED_FEEDBACK_END */'
+
+          BASE_BLOCK = r'''
+          /* MATRA_ENHANCED_FEEDBACK_START */
+          function matraClampScore(v,max){return Math.max(0,Math.min(max,Math.round(Number(v)||0)))}
+          function matraQVal(i){return Number(S.q[i]||0)}
+          function matraQNorm(i){const v=matraQVal(i);return v?((v-1)/5):0}
+          function matraAvg(ix){return ix.reduce((a,i)=>a+matraQVal(i),0)/ix.length}
+          function matraExpertRank(id){const item=items.find(x=>x.id===id);return item?Number(item.expert||99):99}
+          function matraTopExpertCount(list,limit=6){return list.filter(id=>matraExpertRank(id)<=limit).length}
+          function matraSameCount(){return S.team.filter(id=>S.my.includes(id)).length}
+          function matraSet(id,val){const el=$(id);if(el)el.textContent=val}
+          function matraHtml(id,val){const el=$(id);if(el)el.innerHTML=val}
+          function matraListQs(qs){return qs.slice(0,2).map(x=>'<li>'+esc(x)+'</li>').join('')}
+          function matraStrategyScore(){const selected=st.find(x=>x.id===S.ts);return selected?Number(selected.score||0):0}
+          function matraEnhancedMetrics(){
+            const same=matraSameCount();
+            const expert=matraTopExpertCount(S.team,6);
+            const s1=matraClampScore(matraStrategyScore(),10);
+            const s2=matraClampScore(expert/6*10,10);
+            const qscore=matraClampScore(S.q.reduce((a,v)=>a+(Number(v)?((Number(v)-1)/5):0),0)/12*70,70);
+            const s4=matraClampScore(same/6*10,10);
+            const total=matraClampScore(s1+s2+qscore+s4,100);
+            return {same,expert,s1,s2,qscore,s4,total};
+          }
+          function matraBaseFeedback(m){
+            const risk=matraAvg([0,1,2,3,4]);
+            const info=matraQVal(5), sequence=matraQVal(6), argument=matraQVal(7), quietInvite=matraQVal(8), quietImpact=matraQVal(9), identify=matraQVal(10), own=matraQVal(11);
+            let group;
+            if(sequence>=5 && risk>=4.5 && argument>=4){group='A csoport előbb információt és kockázatot rakott az asztalra, majd ebből alakította ki az irányt. Ez döntési szempontból stabil működésnek látszik.'}
+            else if(sequence<=3 && info<=3){group='Úgy látszik, a döntés iránya elég korán megszületett, az információk pedig csak részben formálták tovább. Ilyenkor könnyen a gyors irány válik „jó döntéssé”.'}
+            else if(argument<=3){group='A döntésben az érvek mellett érezhetően megjelent a határozottság, a tempó vagy a hangerő hatása. Ez nem baj önmagában, de torzíthatja, hogy mi kerül közös igazsággá.'}
+            else if(quietInvite<=3 || quietImpact<=3){group='A közös döntésben kevésbé látszik a halkabb, óvatosabb szempontok valódi hatása. A csoport működött, de a döntés valószínűleg néhány hangosabb irány köré rendeződött.'}
+            else if(m.expert>=5 && m.same>=4){group='A közös tárgyválasztás és a saját-közös egyezés alapján a csoport gondolkodása viszonylag gyorsan összeállt, miközben a biztonsági szempontok is megjelentek.'}
+            else {group='A kitöltés alapján vegyes döntési mintázat látszik: voltak használható szempontok, de a kockázatok, alternatívák és közös érvek nem egyformán kaptak súlyt.'}
+            let personal;
+            if(own>=5 && identify>=5){personal='A saját szempontjaid láthatóan megjelentek, és a végső döntés belül is vállalható számodra. Ez aktív, kapcsolódó részvételre utal.'}
+            else if(own>=5 && identify<=3){personal='Bevitted a saját szempontjaidat, de a végső döntés mégsem lett igazán vállalható. Ez jó alap arra, hogy megnézd, hol veszett el a hatás vagy a kapcsolódás.'}
+            else if(own<=3 && identify>=4){personal='A döntéssel nagyjából tudsz azonosulni, de a saját szempontjaid kevésbé látszanak benne. Lehet, hogy inkább igazodtál, mint alakítottál.'}
+            else if(own<=3 || identify<=3){personal='A közös döntésben kevésbé látszik a te nézőpontod vagy belső azonosulásod. Ez nem hiba, hanem jelzés: valami benned maradt, vagy nem kapott elég teret.'}
+            else if(m.same<=2){personal='A saját top 6 és a közös top 6 között kevés volt az egyezés. Valószínűleg érdemben változott a gondolkodásod, vagy a csoport más kockázati logikát követett.'}
+            else {personal='Részt vettél a közös gondolkodásban, de a kitöltés alapján maradt néhány pont, ahol a saját nézőpontod és a csoport iránya csak részben találkozott.'}
+            let forward;
+            if(sequence<=3){forward='A következő tanulság az időrend: mikor döntöttetek valójában, és mikortól csak a döntést védték az érvek?'}
+            else if(argument<=3){forward='A következő tanulság az érvek minősége: mi számított bizonyítéknak, és mi volt inkább magabiztos vélemény?'}
+            else if(quietInvite<=3 || quietImpact<=3){forward='A következő tanulság a bevonás: ki beszélt keveset, és az ő szempontja mennyire módosította volna a döntést?'}
+            else if(own<=3 || identify<=3){forward='A következő tanulság személyes: mitől tudtál volna jobban kapcsolódni a döntéshez, vagy mit kellett volna tisztábban képviselned?'}
+            else {forward='A következő tanulság az átvihetőség: melyik működésmódot érdemes megtartani akkor is, amikor nem játékhelyzetben, hanem valódi nyomás alatt döntötök?'}
+            const qs=[];
+            if(sequence<=3)qs.push('Mikor született meg valójában a döntés: az információk mérlegelése előtt vagy után?');
+            if(argument<=3)qs.push('Melyik érv volt valóban bizonyíték, és melyik volt inkább határozott vélemény?');
+            if(quietInvite<=3 || quietImpact<=3)qs.push('Kinek a halkabb vagy óvatosabb szempontja változtathatta volna meg a közös döntést?');
+            if(own<=3)qs.push('Melyik saját szempontodat kellett volna tisztábban bevinni a beszélgetésbe?');
+            if(identify<=3)qs.push('Mitől lett volna számodra vállalhatóbb a közös döntés?');
+            if(m.same<=2)qs.push('Mi változott a saját top 6 és a közös top 6 között, és mit tanultál ebből?');
+            if(qs.length<2)qs.push('Mit csinálnál ugyanígy egy valódi, nyomás alatti döntési helyzetben?');
+            if(qs.length<2)qs.push('Hol volt az a pont, ahol a csoport már nem adatot keresett, hanem irányt választott?');
+            return {group,personal,forward,qs:qs.slice(0,2)};
+          }
+          function matraEnhancedAfterRender(){
+            const m=matraEnhancedMetrics();
+            matraSet('score',m.total);matraSet('pscore',m.total+' / 100');
+            matraSet('sc1',m.s1+' / 10');matraSet('sc2',m.s2+' / 10');matraSet('sc3',m.qscore+' / 70');matraSet('sc4',m.s4+' / 10');
+            matraSet('overlap','Azonos tárgyak: '+m.same+' / 6');
+            matraSet('expertMatch','A közös top 6-ból '+m.expert+' tárgy szerepel a szakértői top 6-ban.');
+            matraSet('pexpert','Azonos tárgyak: '+m.same+' / 6 · Szakértői fedés: '+m.expert+' / 6');
+            matraSet('verdict',m.total>=80?'Nagyon stabil döntési működés látszik.':m.total>=60?'Használható döntési működés látszik, néhány fontos tanulsággal.':m.total>=40?'Vegyes működés látszik: voltak jó kapaszkodók, de több kockázat nyitva maradt.':'A kitöltés alapján erős döntési kockázatok látszanak.');
+            const f=matraBaseFeedback(m);
+            matraSet('fbGroup',f.group);matraSet('fbPersonal',f.personal);matraSet('fbForward',f.forward);
+            matraHtml('reflectQs',matraListQs(f.qs));
+            matraSet('pg',f.group);matraSet('pp',f.personal);matraSet('pf',f.forward);matraHtml('prq',matraListQs(f.qs));
+            const strengths=[];const risks=[];
+            if(matraAvg([0,1,2,3,4])>=4.5)strengths.push('A fő kockázatokat több szempontból mérlegeltétek.');else risks.push('A fő kockázatok közül több csak részben került mérlegre.');
+            if(matraQVal(6)>=5)strengths.push('A döntés iránya az információk mérlegelése után alakult ki.');else risks.push('A döntés iránya túl korán rögzülhetett.');
+            if(matraQVal(7)>=5)strengths.push('Az érvek erősebben hatottak, mint a hangerő vagy a határozottság.');else risks.push('A hangerő, tempó vagy határozottság torzíthatta a közös döntést.');
+            if(matraQVal(8)>=5 && matraQVal(9)>=5)strengths.push('A csendesebb vélemények is kaptak teret és hatást.');else risks.push('A halkabb szempontok kevésbé hatottak a végeredményre.');
+            matraHtml('strengths',strengths.map(x=>'<li>'+esc(x)+'</li>').join('')||'<li>Nincs kiemelhető erősség a kitöltés alapján.</li>');
+            matraHtml('risks',risks.map(x=>'<li>'+esc(x)+'</li>').join('')||'<li>Nincs erős kockázati jel a kitöltés alapján.</li>');
+          }
+          function render(){renderCore();matraEnhancedAfterRender()}
+          /* MATRA_ENHANCED_FEEDBACK_END */
+          '''
+
+          LEADER_BLOCK = r'''
+          /* MATRA_ENHANCED_FEEDBACK_START */
+          function matraClampScore(v,max){return Math.max(0,Math.min(max,Math.round(Number(v)||0)))}
+          function matraQVal(i){return Number(S.q[i]||0)}
+          function matraQNorm(i){const v=matraQVal(i);return v?((v-1)/5):0}
+          function matraBlockScore(ix,max){return matraClampScore(ix.reduce((a,i)=>a+matraQNorm(i),0)/ix.length*max,max)}
+          function matraAvg(ix){return ix.reduce((a,i)=>a+matraQVal(i),0)/ix.length}
+          function matraExpertRank(id){const item=items.find(x=>x.id===id);return item?Number(item.expert||99):99}
+          function matraExpertCount(list,limit=6){return list.filter(id=>matraExpertRank(id)<=limit).length}
+          function matraSameCount(){return S.team.filter(id=>S.my.includes(id)).length}
+          function matraSet(id,val){const el=$(id);if(el)el.textContent=val}
+          function matraHtml(id,val){const el=$(id);if(el)el.innerHTML=val}
+          function matraListQs(qs){return qs.slice(0,2).map(x=>'<li>'+esc(x)+'</li>').join('')}
+          function matraLeaderMetrics(){
+            const decision=matraBlockScore([0,1,2,3],35);
+            const leader=matraBlockScore([4,5,6,7],30);
+            const personal=matraBlockScore([8,9,10,11],25);
+            const expert=matraExpertCount(S.team,6);
+            const expertScore=matraClampScore(expert/6*10,10);
+            const same=matraSameCount();
+            const total=matraClampScore(decision+leader+personal+expertScore,100);
+            return {decision,leader,personal,expert,expertScore,same,total};
+          }
+          function matraLeaderFeedback(m){
+            const dAvg=matraAvg([0,1,2,3]);
+            const started=matraQVal(4), kept=matraQVal(5), plus=matraQVal(6), focus=matraQVal(7), own=matraQVal(8), influence=matraQVal(9), listened=matraQVal(10), identify=matraQVal(11);
+            let decision;
+            if(dAvg>=4.8){decision='A döntési folyamat stabilnak látszik: a csoport a kockázatokat, a körülményeket és az információk minőségét együtt kezelte.'}
+            else if(matraQVal(3)<=3){decision='A döntés iránya valószínűleg túl korán rögzült. A csoport részben már egy választott irányhoz rendezte az információkat.'}
+            else if(matraQVal(2)<=3){decision='A biztos információk és feltételezések szétválasztása nem volt elég tiszta, ezért a remény és a tény könnyen összecsúszhatott.'}
+            else {decision='A döntési folyamatban volt érdemi mérlegelés, de nem minden kockázati szempont kapott egyforma súlyt.'}
+            let leader;
+            if(started>=4 && kept<=3){leader='A csoport nélküle már elkezdett gondolkodni, de a vezető visszatérése részben felülírta az addigi szempontokat. Ez erős vezetői árnyékot jelez.'}
+            else if(started<=3){leader='A vezető távollétében a csoport kevésbé indult el önállóan. Ez függőséget jelezhet: mintha a döntés jogosultsága a vezetőnél maradt volna.'}
+            else if(plus<=3){leader='A vezető plusz információi nem tisztították eléggé a helyzetet, inkább új bizonytalanságot vagy zajt vihettek be a döntésbe.'}
+            else if(kept>=5 && plus>=5 && focus>=5){leader='A vezető visszatérése jól illeszkedett a csoport munkájához: hozott információt, de nem nullázta le az addigi gondolkodást.'}
+            else {leader='A vezető hatása vegyesnek látszik: volt szerepe a fókuszban és az információban, de a csoport önálló működése és az addigi szempontok megtartása külön figyelmet érdemel.'}
+            let personal;
+            if(own>=5 && influence>=5 && identify>=5){personal='Aktívan benne voltál a döntésben: kimondtad a szempontjaidat, azok hatottak is, és a végeredmény vállalható számodra.'}
+            else if(own>=5 && influence<=3){personal='Kimondtad, amit fontosnak tartottál, de ez kevésbé alakította a közös döntést. Itt a hatás és a képviselet közti különbség a tanulság.'}
+            else if(own<=3){personal='A saját szempontjaid kevésbé jelentek meg. Lehet, hogy figyeltél, igazodtál, vagy kivártál, de a közös döntésben kevesebb nyoma maradt a nézőpontodnak.'}
+            else if(listened<=3){personal='A saját nézőpontod mellett nehezebben maradhattál nyitott más olvasatokra. Nyomás alatt ez gyorsan beszűkítheti a közös gondolkodást.'}
+            else if(identify<=3){personal='A végső döntés belül kevésbé vállalható számodra. Ez fontos jel: valami vagy nem hangzott el, vagy nem kapott elég súlyt.'}
+            else {personal='A részvételed érdemi, de nem teljesen tiszta mintát mutat: volt saját nézőpont, volt alkalmazkodás, és maradt néhány pont, amit érdemes visszanézni.'}
+            const qs=[];
+            if(started<=3)qs.push('Mi történt bennetek, amíg a vezető nem volt bent: elkezdtetek dönteni, vagy inkább kivártatok?');
+            if(started>=4 && kept<=3)qs.push('Mi változott meg akkor, amikor a vezető visszatért? Mi maradt meg az addigi gondolkodásból?');
+            if(plus<=3)qs.push('A vezető plusz információja segített tisztábban látni, vagy inkább új irányba vitte a csoportot?');
+            if(own<=3)qs.push('Melyik saját szempontodat kellett volna tisztábban kimondanod?');
+            if(influence<=3 && own>=4)qs.push('Miért nem hatott jobban az, amit te fontosnak tartottál?');
+            if(identify<=3)qs.push('Mitől lett volna számodra vállalhatóbb a közös döntés?');
+            if(qs.length<2)qs.push('A vezető jelenléte mikor segítette, és mikor szűkítette a közös gondolkodást?');
+            if(qs.length<2)qs.push('Mit csinálnál ugyanígy egy valódi vezetői nyomáshelyzetben?');
+            return {decision,leader,personal,qs:qs.slice(0,2)};
+          }
+          function matraEnhancedAfterRender(){
+            const m=matraLeaderMetrics();
+            matraSet('score',m.total);matraSet('pscore',m.total+' / 100');
+            matraSet('sc1',m.decision+' / 35');matraSet('sc2',m.leader+' / 30');matraSet('sc3',m.personal+' / 25');matraSet('sc4',m.expertScore+' / 10');
+            matraSet('overlap','Saját és közös egyezés: '+m.same+' / 6');
+            matraSet('expertMatch','A közös top 6-ból '+m.expert+' tárgy szerepel a szakértői top 6-ban.');
+            matraSet('pexpert','Saját-közös egyezés: '+m.same+' / 6 · Szakértői fedés: '+m.expert+' / 6');
+            matraSet('verdict',m.total>=80?'Nagyon stabil vezetői döntési működés látszik.':m.total>=60?'Használható döntési működés látszik, néhány vezetői tanulsággal.':m.total>=40?'Vegyes működés látszik: a vezetői hatás és az egyéni szerepek külön figyelmet érdemelnek.':'A kitöltés alapján erős döntési és vezetői kockázatok látszanak.');
+            const f=matraLeaderFeedback(m);
+            matraSet('fbDecision',f.decision);matraSet('fbLeader',f.leader);matraSet('fbPersonal',f.personal);
+            matraHtml('reflectQs',matraListQs(f.qs));
+            matraSet('pd',f.decision);matraSet('pl',f.leader);matraSet('pp',f.personal);matraHtml('prq',matraListQs(f.qs));
+            const strengths=[];const risks=[];
+            if(matraAvg([0,1,2,3])>=4.5)strengths.push('A döntés minőségét támogató szempontok erősen jelen voltak.');else risks.push('A döntési folyamatban több kockázati szempont csak részben kapott súlyt.');
+            if(matraQVal(4)>=5)strengths.push('A csoport a vezető nélkül is képes volt elindítani a gondolkodást.');else risks.push('A csoport erősen várhatott a vezetőre.');
+            if(matraQVal(5)>=5 && matraQVal(6)>=5)strengths.push('A vezető visszatérése nem nullázott, hanem épített az addigi munkára.');else risks.push('A vezető visszatérése vagy információja torzíthatta az addigi gondolkodást.');
+            if(matraQVal(8)>=5 && matraQVal(9)>=5)strengths.push('A saját szempontjaid megjelentek és hatottak is.');else risks.push('A saját nézőpontod hatása korlátozott lehetett.');
+            matraHtml('strengths',strengths.map(x=>'<li>'+esc(x)+'</li>').join('')||'<li>Nincs kiemelhető erősség a kitöltés alapján.</li>');
+            matraHtml('risks',risks.map(x=>'<li>'+esc(x)+'</li>').join('')||'<li>Nincs erős kockázati jel a kitöltés alapján.</li>');
+          }
+          function render(){renderCore();matraEnhancedAfterRender()}
+          /* MATRA_ENHANCED_FEEDBACK_END */
+          '''
+
+          def install_block(path, block):
+              p=Path(path)
+              text=p.read_text(encoding='utf-8')
+              text=re.sub(re.escape(START)+r'[\s\S]*?'+re.escape(END), '', text)
+              if 'function renderCore(){save();' not in text:
+                  text=text.replace('function render(){save();', 'function renderCore(){save();', 1)
+              if 'function renderCore(){save();' not in text:
+                  raise SystemExit(f'{path}: renderCore not found/created')
+              marker='render();'
+              idx=text.rfind(marker)
+              if idx < 0:
+                  raise SystemExit(f'{path}: init render call not found')
+              text=text[:idx]+block+'\n'+text[idx:]
+              p.write_text(text, encoding='utf-8')
+
+          install_block('matra-v3.html', BASE_BLOCK)
+          install_block('matra-leader.html', LEADER_BLOCK)
+
+          for path, required in {
+              'matra-v3.html':['function renderCore(){save();','function render(){renderCore();matraEnhancedAfterRender()}','matraQNorm','A döntés iránya valószínűleg túl korán rögzült'],
+              'matra-leader.html':['function renderCore(){save();','function render(){renderCore();matraEnhancedAfterRender()}','matraLeaderMetrics','A vezető visszatérése részben felülírta']
+          }.items():
+              s=Path(path).read_text(encoding='utf-8')
+              missing=[x for x in required if x not in s]
+              if missing:
+                  raise SystemExit(f'{path}: missing {missing}')
+              if s.count('MATRA_ENHANCED_FEEDBACK_START') != 1:
+                  raise SystemExit(f'{path}: enhanced block count error')
+          PY
+      - name: Commit changes
+        run: |
+          if git diff --quiet; then
+            echo "No changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add matra-v3.html matra-leader.html
+          git commit -m "Enhance scoring and personalized feedback"
+          git push
